@@ -1,65 +1,596 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MovieRecord } from "@/lib/types";
+import { Sparkles, Film, CheckCircle2, Loader2, ArrowUp, Eye, EyeOff, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
+import TabBar from "@/components/TabBar";
+import StatsBar from "@/components/StatsBar";
+import MovieCard from "@/components/MovieCard";
+import DetailModal from "@/components/DetailModal";
+import EvaluationModal from "@/components/EvaluationModal";
+import MovieRoulette from "@/components/MovieRoulette";
+import GlobalSearch from "@/components/GlobalSearch";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+  const { data: session, status } = useSession();
+  const { t, language } = useLanguage();
+
+  
+  const [movies, setMovies] = useState<MovieRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
+  const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
+  const [evaluationMovie, setEvaluationMovie] = useState<MovieRecord | null>(null);
+  const [rouletteOpen, setRouletteOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showAllRatings, setShowAllRatings] = useState(false);
+  const [sortBy, setSortBy] = useState<"imdb" | "releaseDate" | "none">("none");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const isAnyModalOpen = selectedMovie !== null || evaluationMovie !== null || rouletteOpen;
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.classList.add("modal-open-prevent-scroll");
+    } else {
+      document.body.classList.remove("modal-open-prevent-scroll");
+    }
+    return () => {
+      document.body.classList.remove("modal-open-prevent-scroll");
+    };
+  }, [isAnyModalOpen]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const fetchMovies = useCallback(async () => {
+    if (!session) return;
+    try {
+      const res = await fetch("/api/movies");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setMovies(data);
+      } else {
+        setMovies([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch movies:", err);
+      setMovies([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+
+  const handleForceSync = async () => {
+    setSyncing(true);
+    setSyncMessage("Syncing TMDB posters sequentially...");
+    try {
+      const res = await fetch(`/api/movies/sync?language=${language}`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setSyncMessage(`Synced ${data.updatedCount} movies!`);
+        fetchMovies();
+      } else {
+        setSyncMessage("Sync failed.");
+      }
+    } catch {
+      setSyncMessage("Server connection failed.");
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncMessage(null), 5000);
+    }
+  };
+
+  const [syncingAll, setSyncingAll] = useState(false);
+
+  const handleSyncAll = async () => {
+    setSyncingAll(true);
+    setSyncMessage("Mass Syncing 100% accurate IMDb ratings (400ms throttle)...");
+    try {
+      const res = await fetch(`/api/movies/sync-all?language=${language}`);
+      const data = await res.json();
+      if (data.success) {
+        setSyncMessage(`Mass Synced ${data.updatedCount} movies with real IMDb scores!`);
+        fetchMovies();
+      } else {
+        setSyncMessage("Mass Sync failed.");
+      }
+    } catch {
+      setSyncMessage("Server connection failed.");
+    } finally {
+      setSyncingAll(false);
+      setTimeout(() => setSyncMessage(null), 8000);
+    }
+  };
+
+  useEffect(() => { 
+    if (session) {
+      fetchMovies(); 
+    }
+  }, [fetchMovies, session]);
+
+  const watchlist = movies.filter((m) => !m.isWatched);
+  const watched = movies.filter((m) => m.isWatched).sort(
+    (a, b) => new Date(b.watchedAt || 0).getTime() - new Date(a.watchedAt || 0).getTime()
+  );
+  const baseDisplayed = activeTab === "watchlist" ? watchlist : watched;
+
+  const displayed = [...baseDisplayed].sort((a, b) => {
+    if (sortBy === "imdb") {
+      const aRating = parseFloat(a.imdbRating?.replace("ERR: ", "") || "0");
+      const bRating = parseFloat(b.imdbRating?.replace("ERR: ", "") || "0");
+      const aVal = isNaN(aRating) ? -1 : aRating;
+      const bVal = isNaN(bRating) ? -1 : bRating;
+      return bVal - aVal;
+    }
+    if (sortBy === "releaseDate") {
+      const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+      const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+      const validA = isNaN(dateA) ? 0 : dateA;
+      const validB = isNaN(dateB) ? 0 : dateB;
+      return validB - validA;
+    }
+    return 0;
+  });
+
+  const handleMovieAdded = () => {
+    setActiveTab("watchlist");
+    fetchMovies();
+  };
+
+  const handleMarkWatched = async (id: string, tagColor: string) => {
+    try {
+      const res = await fetch(`/api/movies/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isWatched: true, watchedAt: new Date().toISOString(), tagColor }),
+      });
+      if (res.ok) { setSelectedMovie(null); fetchMovies(); }
+    } catch (err) { console.error("Failed to update movie:", err); }
+  };
+
+  const handleSaveEvaluation = async (movieId: string, ratingTier: string, watchedAt: string) => {
+    try {
+      const res = await fetch(`/api/movies/${movieId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isWatched: true,
+          ratingTier,
+          watchedAt: new Date(watchedAt).toISOString(),
+        }),
+      });
+      if (res.ok) {
+        setEvaluationMovie(null);
+        fetchMovies();
+      }
+    } catch (err) {
+      console.error("Failed to save evaluation:", err);
+    }
+  };
+
+  const handleDeleteMovie = async (id: string) => {
+    try {
+      const res = await fetch(`/api/movies/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setSelectedMovie(null);
+        fetchMovies();
+      } else {
+        console.warn("DB delete returned non-ok, updating client-side list fallback");
+        setMovies((prev) => prev.filter((m) => m.id !== id));
+        setSelectedMovie(null);
+      }
+    } catch (err) {
+      console.warn("Delete request failed, updating client-side fallback list:", err);
+      setMovies((prev) => prev.filter((m) => m.id !== id));
+      setSelectedMovie(null);
+    }
+  };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
+        <p className="text-zinc-400 text-sm font-medium animate-pulse">Initializing CineHub...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient Gradient Background Blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[150px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-500/10 rounded-full blur-[150px] pointer-events-none" />
+        
+        {/* Animated Main Content Container */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-md w-full bg-zinc-900/40 border border-zinc-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-2xl relative z-10 flex flex-col items-center text-center"
+        >
+          {/* Logo Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6">
+            <Film className="w-8 h-8 text-white animate-float" />
+          </div>
+
+          <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">
+            Welcome to <span className="gradient-text">CineHub</span>
+          </h2>
+          <p className="text-zinc-400 text-sm mb-8 leading-relaxed max-w-sm">
+            Your premium movie tracking dashboard. Sign in with your Google account to manage your personal watchlist, analyze stats, and spin the roulette.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          {/* Premium Google Sign-In Button */}
+          <motion.button
+            whileHover={{ scale: 1.03, translateY: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => signIn("google")}
+            className="w-full py-3.5 px-5 rounded-2xl bg-white hover:bg-zinc-100 text-zinc-900 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-3 shadow-xl hover:shadow-white/5 cursor-pointer border-none outline-none"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.97 1 12 1 7.24 1 3.21 3.75 1.25 7.77l3.86 3C6.01 7.74 8.78 5.04 12 5.04z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.81-.07-1.59-.2-2.34H12v4.45h6.45c-.28 1.48-1.11 2.74-2.36 3.59l3.66 2.84c2.14-1.97 3.74-4.88 3.74-8.54z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.11 14.23c-.23-.69-.36-1.43-.36-2.23s.13-1.54.36-2.23L1.25 6.77C.45 8.38 0 10.14 0 12s.45 3.62 1.25 5.23l3.86-3z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.66-2.84c-1.01.68-2.3 1.09-4.3 1.09-3.22 0-5.99-2.7-6.89-5.73l-3.86 3C3.21 20.25 7.24 23 12 23z"
+              />
+            </svg>
+            Sign in with Google
+          </motion.button>
+
+          <span className="text-[10px] text-zinc-500 mt-5 font-medium tracking-wide">
+            SECURE AUTHENTICATION VIA GOOGLE ACCOUNT
+          </span>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full">
+      <div className={isAnyModalOpen ? "modal-open-prevent-scroll flex-1 flex flex-col" : "flex-1 flex flex-col"}>
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="mb-8"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                <span className="gradient-text">CineHub</span>
+              </h1>
+              {session.user && (
+                <div className="flex items-center gap-2 bg-zinc-900/60 border border-zinc-800/80 px-2.5 py-1.5 rounded-full text-xs font-semibold text-zinc-300 shadow-md">
+                  {session.user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || "Avatar"}
+                      className="w-5 h-5 rounded-full border border-purple-500/30"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px]">
+                      {session.user.name?.[0] || "U"}
+                    </div>
+                  )}
+                  <span className="hidden md:inline text-zinc-400 max-w-[120px] truncate">{session.user.name}</span>
+                  <button
+                    onClick={() => signOut()}
+                    className="ml-1 text-[10px] text-zinc-500 hover:text-zinc-300 hover:underline cursor-pointer border-none bg-transparent outline-none font-bold"
+                  >
+                    {t.signOut}
+                  </button>
+                </div>
+              )}
+              {session.user && <LanguageSwitcher />}
+            </div>
+            <p className="text-zinc-500 text-sm mt-1 font-medium">Your personal movie tracker & roulette</p>
+            <div className="flex items-center gap-3 mt-3.5 flex-wrap">
+              <button
+                disabled={syncing || syncingAll}
+                onClick={handleForceSync}
+                className="px-3.5 py-1.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-xs font-semibold text-purple-300 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                )}
+                {t.forcePosters}
+              </button>
+
+              <button
+                disabled={syncing || syncingAll}
+                onClick={handleSyncAll}
+                className="px-3.5 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-xs font-semibold text-emerald-300 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {syncingAll ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                {t.massSync}
+              </button>
+
+
+              {syncMessage && (
+                <span className="text-xs text-zinc-300/80 font-medium animate-pulse">{syncMessage}</span>
+              )}
+            </div>
+          </div>
+          <GlobalSearch onMovieAdded={handleMovieAdded} />
+        </div>
+        <StatsBar total={movies.length} watched={watched.length} />
+      </motion.header>
+
+      {/* Tabs & Controls */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7 relative z-50">
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          watchlistCount={watchlist.length}
+          watchedCount={watched.length}
+        />
+        
+        {/* Sleek Glassmorphism Control Panel */}
+        <div className="flex flex-wrap items-center gap-3 bg-zinc-900/40 p-1.5 rounded-2xl border border-zinc-800/60 backdrop-blur-md self-start md:self-auto w-full md:w-auto justify-between sm:justify-start">
+          {/* IMDb Ratings Toggle Button */}
+          <button
+            onClick={() => setShowAllRatings(!showAllRatings)}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-300 cursor-pointer ${
+              showAllRatings
+                ? "bg-purple-500/20 border-purple-500/40 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
+                : "bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300"
+            }`}
+            title={showAllRatings ? "Always Show Ratings: ON" : "Always Show Ratings: OFF"}
+          >
+            {showAllRatings ? (
+              <Eye className="w-3.5 h-3.5 text-purple-400" />
+            ) : (
+              <EyeOff className="w-3.5 h-3.5 text-zinc-500" />
+            )}
+            <span>{showAllRatings ? t.hideImdb : t.showImdb}</span>
+          </button>
+
+          {/* Custom Premium Dropdown */}
+          <div className="relative">
+            {/* Trigger Button */}
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 px-4 py-2.5 rounded-xl text-zinc-300 text-sm font-medium hover:bg-zinc-800/60 hover:text-white transition-all flex items-center gap-2.5 shadow-lg shadow-black/20 cursor-pointer"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-zinc-400" />
+              <span>
+                {sortBy === "imdb"
+                  ? t.imdbRating
+                  : sortBy === "releaseDate"
+                  ? t.releaseDate
+                  : t.noSorting}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Click-outside backdrop overlay to dismiss dropdown gracefully */}
+            {isDropdownOpen && (
+              <div 
+                className="fixed inset-0 z-[90] cursor-default" 
+                onClick={() => setIsDropdownOpen(false)}
+              />
+            )}
+
+            {/* Dropdown Menu Container */}
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 mt-2 w-56 z-[100] origin-top-right bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 p-1.5 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.7)]"
+                >
+                  <button
+                    onClick={() => {
+                      setSortBy("none");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer ${
+                      sortBy === "none"
+                        ? "bg-zinc-800 text-white font-medium"
+                        : "text-zinc-400 hover:bg-zinc-800/70 hover:text-white"
+                    }`}
+                  >
+                    <span>{t.noSorting}</span>
+                    {sortBy === "none" && <Check className="w-4 h-4 text-purple-400" />}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSortBy("imdb");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer ${
+                      sortBy === "imdb"
+                        ? "bg-zinc-800 text-white font-medium"
+                        : "text-zinc-400 hover:bg-zinc-800/70 hover:text-white"
+                    }`}
+                  >
+                    <span>{t.imdbRating}</span>
+                    {sortBy === "imdb" && <Check className="w-4 h-4 text-purple-400" />}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSortBy("releaseDate");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer ${
+                      sortBy === "releaseDate"
+                        ? "bg-zinc-800 text-white font-medium"
+                        : "text-zinc-400 hover:bg-zinc-800/70 hover:text-white"
+                    }`}
+                  >
+                    <span>{t.releaseDate}</span>
+                    {sortBy === "releaseDate" && <Check className="w-4 h-4 text-purple-400" />}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Movie Grid */}
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="rounded-2xl overflow-hidden glass-card">
+              <div className="aspect-[2/3] shimmer" />
+            </div>
+          ))}
+        </div>
+      ) : displayed.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center py-24 text-center"
+        >
+          <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center mb-5">
+            {activeTab === "watchlist" ? (
+              <Film className="w-9 h-9 text-zinc-500" />
+            ) : (
+              <CheckCircle2 className="w-9 h-9 text-zinc-500" />
+            )}
+          </div>
+          <h3 className="text-lg font-semibold text-zinc-300">
+            {activeTab === "watchlist" ? t.emptyWatchlist : t.emptyWatched}
+          </h3>
+          <p className="text-sm text-zinc-500 mt-1.5 max-w-xs">
+            {activeTab === "watchlist" ? t.emptyWatchlistSub : t.emptyWatchedSub}
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div
+          layout
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+        >
+          {displayed.map((movie, index) => (
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              onSelect={setSelectedMovie}
+              index={index}
+              showRatingAlways={showAllRatings}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          ))}
+        </motion.div>
+      )}
+
+      {/* Floating Roulette Button */}
+      {watchlist.length > 0 && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => setRouletteOpen(true)}
+          className="fixed bottom-6 right-6 flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer z-40"
+          title="Movie Roulette"
+        >
+          <Sparkles className="w-5 h-5" />
+          <span className="hidden sm:inline">Spin</span>
+        </motion.button>
+      )}
+
+      </div>
+
+      {/* Detail Modal */}
+      <DetailModal
+        movie={selectedMovie}
+        onClose={() => setSelectedMovie(null)}
+        onMarkWatched={handleMarkWatched}
+        onDelete={handleDeleteMovie}
+        onOpenEvaluation={(movie) => {
+          setSelectedMovie(null);
+          setEvaluationMovie(movie);
+        }}
+      />
+
+      {/* Evaluation Modal */}
+      <AnimatePresence>
+        {evaluationMovie && (
+          <EvaluationModal
+            movie={evaluationMovie}
+            onClose={() => setEvaluationMovie(null)}
+            onSave={handleSaveEvaluation}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Movie Roulette */}
+      <MovieRoulette
+        movies={watchlist}
+        isOpen={rouletteOpen}
+        onClose={() => setRouletteOpen(false)}
+        onSelectMovie={(movie) => setSelectedMovie(movie)}
+      />
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            whileHover={{ scale: 1.1, translateY: -2 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-6 flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900/80 border border-zinc-700/50 backdrop-blur-xl text-zinc-300 hover:text-white shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:border-purple-500/30 transition-colors cursor-pointer z-40"
+            title="Scroll to Top"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </main>
   );
 }
