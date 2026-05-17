@@ -15,6 +15,8 @@ import Footer from "@/components/Footer";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import Image from "next/image";
+import LogoImage from "@/app/oxynema-logo.png";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -295,8 +297,19 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-6">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                <span className="gradient-text">Oxynema</span>
+              {/* Refactored Accessible Header */}
+              <h1 className="flex items-center justify-start">
+                {/* Important: Visually hidden text for SEO/Accessibility */}
+                <span className="sr-only">Oxynema - Kişisel Film Takip ve Rulet Platformu</span>
+                
+                {/* The New Premium Logo Image */}
+                <Image 
+                  src={LogoImage} 
+                  alt="Oxynema - Premium el yazısı gümüş logo imza" 
+                  height={72} // Sets height to approximate current font height (72px ~ 4xl-5xl)
+                  priority // Critical: Loads with high priority for immediate display
+                  className="h-16 lg:h-20 w-auto" // Maintains aspect ratio, responsive sizing
+                />
               </h1>
               {session.user && (
                 <div className="flex items-center gap-2 bg-zinc-900/60 border border-zinc-800/80 px-2.5 py-1.5 rounded-full text-xs font-semibold text-zinc-300 shadow-md">
