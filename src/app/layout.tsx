@@ -21,11 +21,20 @@ export const metadata: Metadata = {
     siteName: "Oxynema",
     locale: "tr_TR",
     type: "website",
+    images: [
+      {
+        url: "/images/auth-bg.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Oxynema — Sinematik Film Evreni",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Oxynema — Kişisel Film Takip & Rulet Platformu",
     description: "Sinema tutkunları için Oxypace çatısı altında geliştirilen modern film izleme günlüğü.",
+    images: ["/images/auth-bg.jpg"],
   },
 };
 
