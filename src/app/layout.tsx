@@ -9,9 +9,24 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Oxynema — Personal Movie Tracker",
-  description: "Track your movie watchlist, discover new films with TMDB integration, and let the Movie Roulette pick your next watch.",
-  keywords: ["movie tracker", "watchlist", "TMDB", "movie roulette", "cinema"],
+  title: "Oxynema — Kişisel Film Takip & Rulet Platformu",
+  description: "Kişisel film arşivinizi oluşturun, izleme istatistiklerinizi analiz edin ve kararsız kaldığınız gecelerde film ruletinin sizin için en iyi seçimi yapmasına izin verin. Oxypace iştirakidir.",
+  metadataBase: new URL("https://oxynema.vercel.app"),
+  keywords: ["film", "sinema", "film ruleti", "watch list", "oxynema", "oxypace", "film takip"],
+  authors: [{ name: "nkohlei" }],
+  openGraph: {
+    title: "Oxynema — Premium Film Günlüğü & Ruleti",
+    description: "Kişisel film arşivinizi modern, cam efektli bir arayüzle takip edin ve film ruletiyle gecenin başyapıtını seçin.",
+    url: "https://oxynema.vercel.app",
+    siteName: "Oxynema",
+    locale: "tr_TR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Oxynema — Kişisel Film Takip & Rulet Platformu",
+    description: "Sinema tutkunları için Oxypace çatısı altında geliştirilen modern film izleme günlüğü.",
+  },
 };
 
 export default function RootLayout({
