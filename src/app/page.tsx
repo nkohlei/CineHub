@@ -17,6 +17,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Image from "next/image";
 import LogoImage from "@/app/oxynema-logo.png";
+import AuthBg from "../../public/images/auth-bg.jpg";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -217,32 +218,37 @@ export default function Home() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] pointer-events-none" />
         <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
-        <p className="text-zinc-400 text-sm font-medium animate-pulse">Initializing CineHub...</p>
+        <p className="text-zinc-400 text-sm font-medium animate-pulse">Initializing Oxynema...</p>
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Ambient Gradient Background Blobs */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-500/10 rounded-full blur-[150px] pointer-events-none" />
-        
+      <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black p-4">
+        {/* High-Performance Next.js Background Image */}
+        <div className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden">
+          <Image
+            src={AuthBg}
+            alt="Cinematic Movie Poster Background"
+            fill
+            priority
+            quality={85}
+            className="object-cover brightness-[0.18] contrast-[1.05] scale-102 transition-all duration-700" 
+          />
+          {/* Subtle dark vignette overlay to draw eyes to the center card */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80" />
+        </div>
+
         {/* Animated Main Content Container */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-md w-full bg-zinc-900/40 border border-zinc-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-2xl relative z-10 flex flex-col items-center text-center"
+          className="relative z-10 max-w-md w-full bg-zinc-950/65 backdrop-blur-xl border border-zinc-900/80 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center"
         >
-          {/* Logo Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6">
-            <Film className="w-8 h-8 text-white animate-float" />
-          </div>
-
           {/* Refactored Premium Welcome Header */}
-          <div className="flex flex-col items-center gap-1.5 mt-5 mb-3 select-none">
+          <div className="flex flex-col items-center gap-1.5 mt-2 mb-3 select-none">
               {/* Screen Reader Only text for accessibility and clean SEO indexation */}
               <h2 className="sr-only">Welcome to Oxynema</h2>
               
