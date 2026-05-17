@@ -42,26 +42,24 @@ export default function StatsBar({ total, watched }: StatsBarProps) {
 
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8 p-4 rounded-2xl glass">
-      <div className="flex gap-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-zinc-800/40 ${stat.iconColor}`}>
-              <stat.Icon className="w-4 h-4" />
-            </div>
-            <div>
-              <div className={`text-xl font-bold tabular-nums ${stat.color}`}>
-                <AnimatedNumber value={stat.value} />
-              </div>
-              <div className="text-[11px] text-zinc-500 font-medium">{stat.label}</div>
-            </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 p-4 rounded-2xl glass items-stretch">
+      {stats.map((stat) => (
+        <div key={stat.label} className="flex items-center gap-3 bg-zinc-900/25 p-3 rounded-xl border border-zinc-800/40">
+          <div className={`p-2 rounded-lg bg-zinc-800/40 ${stat.iconColor} shrink-0`}>
+            <stat.Icon className="w-4.5 h-4.5" />
           </div>
-        ))}
-      </div>
+          <div className="min-w-0">
+            <div className={`text-xl font-bold tabular-nums truncate ${stat.color}`}>
+              <AnimatedNumber value={stat.value} />
+            </div>
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 font-medium truncate">{stat.label}</div>
+          </div>
+        </div>
+      ))}
 
       {/* Progress bar */}
-      <div className="flex-1 max-w-xs">
-        <div className="flex justify-between text-[11px] text-zinc-500 mb-1.5 font-medium">
+      <div className="col-span-2 md:col-span-1 bg-zinc-900/25 p-3 rounded-xl border border-zinc-800/40 flex flex-col justify-center min-h-[56px]">
+        <div className="flex justify-between text-[10px] sm:text-[11px] text-zinc-500 mb-1.5 font-medium">
           <span>Progress</span>
           <span className="text-purple-400">{Math.round(progress)}%</span>
         </div>

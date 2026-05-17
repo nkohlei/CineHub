@@ -245,7 +245,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative z-10 max-w-md w-full bg-zinc-950/65 backdrop-blur-xl border border-zinc-900/80 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center"
+          className="relative z-10 w-[92%] max-w-md bg-zinc-950/65 backdrop-blur-xl border border-zinc-900/80 p-6 sm:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center"
         >
           {/* Refactored Premium Welcome Header */}
           <div className="flex flex-col items-center gap-1.5 mt-2 mb-3 select-none">
@@ -253,7 +253,7 @@ export default function Home() {
               <h2 className="sr-only">Welcome to Oxynema</h2>
               
               {/* Minimalist Subtitle */}
-              <span className="text-zinc-400 text-xs font-bold tracking-widest uppercase opacity-80">
+              <span className="text-zinc-400 text-[10px] sm:text-xs font-bold tracking-widest uppercase opacity-80">
                   Welcome to
               </span>
               
@@ -263,7 +263,7 @@ export default function Home() {
                   alt="Oxynema Brand Logo" 
                   height={54} // Perfectly scaled to fit inside the compact modal layout
                   priority // Loaded instantly for maximum loading efficiency
-                  className="h-12 sm:h-14 w-auto transform hover:scale-102 transition-transform duration-300"
+                  className="h-10 sm:h-14 w-auto transform hover:scale-102 transition-transform duration-300"
               />
           </div>
           <p className="text-zinc-400 text-sm mb-8 leading-relaxed max-w-sm">
@@ -316,7 +316,7 @@ export default function Home() {
         transition={{ duration: 0.6 }}
         className="mb-8"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3">
               {/* Refactored Accessible Header */}
@@ -516,7 +516,7 @@ export default function Home() {
 
       {/* Movie Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="rounded-2xl overflow-hidden glass-card">
               <div className="aspect-[2/3] shimmer" />
@@ -546,7 +546,7 @@ export default function Home() {
       ) : (
         <motion.div
           layout
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6"
         >
           {displayed.map((movie, index) => (
             <MovieCard

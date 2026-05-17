@@ -201,24 +201,24 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
             exit={{ opacity: 0, scale: 0.92, y: 24 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-3xl max-h-[90vh] rounded-2xl glass-heavy z-10 flex flex-col overflow-hidden"
+            className="relative w-full h-full max-h-screen md:h-[90vh] md:w-[95vw] md:max-w-3xl rounded-none md:rounded-2xl glass-heavy z-10 flex flex-col overflow-hidden"
           >
             {/* Absolute close button anchored inside the relative box */}
             {/* Inner scrollable container */}
             <div
               ref={modalScrollRef}
-              className="flex-1 w-full overflow-y-auto scrollbar-none rounded-2xl relative"
+              className="flex-1 w-full overflow-y-auto scrollbar-none rounded-none md:rounded-2xl relative"
             >
               {/* Premium Circular Medium-Grey Scrolling Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-6 right-6 z-[200] p-2.5 rounded-full bg-zinc-700/60 hover:bg-zinc-600/80 border border-zinc-600 text-zinc-300 hover:text-white transition-all shadow-md cursor-pointer"
+                className="absolute top-4 right-4 md:top-6 md:right-6 z-[250] scale-90 md:scale-100 p-2.5 rounded-full bg-zinc-700/60 hover:bg-zinc-600/80 border border-zinc-600 text-zinc-300 hover:text-white transition-all shadow-md cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             {/* Backdrop image */}
             {(details?.backdropUrl || movie.backdropPath) && !showTrailer && (
-              <div className="relative h-56 sm:h-72 overflow-hidden rounded-t-2xl">
+              <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden rounded-none md:rounded-t-2xl">
                 <Image src={details?.backdropUrl || ('https://image.tmdb.org/t/p/original' + movie.backdropPath)} alt={activeTitle} fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#08080e] via-[#08080e]/60 to-transparent" />
                 {(details?.trailerKey || movie.trailerKey) && (
@@ -249,13 +249,13 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
             </AnimatePresence>
 
             {/* Content */}
-            <div className="p-6 sm:p-8">
+            <div className="px-4 py-6 md:px-10 md:py-12">
 
               {/* Title & meta */}
               <div className="flex flex-wrap items-start gap-4 mb-5">
                 <div className="flex-1">
                   <h2 className="text-2xl sm:text-3xl font-bold text-white">{activeTitle}</h2>
-                  <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-zinc-400">
+                  <div className="flex flex-wrap items-center gap-2 mt-2 text-xs sm:text-sm text-zinc-400">
                     {details?.year && <span>{details.year}</span>}
                     {details?.runtime ? (
                       <>
@@ -338,7 +338,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     {canScrollLeft && (
                       <button
                         onClick={() => scrollCarousel("left")}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 h-10 w-10 rounded-full flex items-center justify-center lg:opacity-0 group-hover:opacity-100 opacity-100 transition-opacity z-10 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 h-10 w-10 rounded-full hidden md:flex items-center justify-center lg:opacity-0 group-hover:opacity-100 opacity-100 transition-opacity z-10 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
                       >
                         <ChevronLeft className="w-5 h-5 text-zinc-300 hover:text-white" />
                       </button>
@@ -348,7 +348,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     {canScrollRight && (
                       <button
                         onClick={() => scrollCarousel("right")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 h-10 w-10 rounded-full flex items-center justify-center lg:opacity-0 group-hover:opacity-100 opacity-100 transition-opacity z-10 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 h-10 w-10 rounded-full hidden md:flex items-center justify-center lg:opacity-0 group-hover:opacity-100 opacity-100 transition-opacity z-10 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
                       >
                         <ChevronRight className="w-5 h-5 text-zinc-300 hover:text-white" />
                       </button>
@@ -356,7 +356,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
                     <div
                       ref={carouselRef}
-                      className="flex overflow-x-auto gap-4 pb-3 scrollbar-none"
+                      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none antialiased WebkitOverflowScrolling-touch gap-4 pb-3"
                     >
                       {recommendations.map((rec) => {
                         const recPoster = rec.poster_path ? `https://image.tmdb.org/t/p/w200${rec.poster_path}` : null;
@@ -365,7 +365,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                           <div
                             key={rec.id}
                             onClick={() => handleSelectRecommendation(rec)}
-                            className="w-[130px] shrink-0 relative group/card cursor-pointer"
+                            className="w-[130px] shrink-0 relative group/card cursor-pointer snap-start"
                           >
                             <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-zinc-900/60">
                               {recPoster ? (
