@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CineHub — Personal Movie Tracker",
+  title: "Oxynema — Personal Movie Tracker",
   description: "Track your movie watchlist, discover new films with TMDB integration, and let the Movie Roulette pick your next watch.",
   keywords: ["movie tracker", "watchlist", "TMDB", "movie roulette", "cinema"],
 };

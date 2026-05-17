@@ -11,6 +11,7 @@ import DetailModal from "@/components/DetailModal";
 import EvaluationModal from "@/components/EvaluationModal";
 import MovieRoulette from "@/components/MovieRoulette";
 import GlobalSearch from "@/components/GlobalSearch";
+import Footer from "@/components/Footer";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -239,8 +240,8 @@ export default function Home() {
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">
-            Welcome to <span className="gradient-text">CineHub</span>
-          </h2>
+              Welcome to <span className="gradient-text">Oxynema</span>
+            </h2>
           <p className="text-zinc-400 text-sm mb-8 leading-relaxed max-w-sm">
             Your premium movie tracking dashboard. Sign in with your Google account to manage your personal watchlist, analyze stats, and spin the roulette.
           </p>
@@ -295,7 +296,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                <span className="gradient-text">CineHub</span>
+                <span className="gradient-text">Oxynema</span>
               </h1>
               {session.user && (
                 <div className="flex items-center gap-2 bg-zinc-900/60 border border-zinc-800/80 px-2.5 py-1.5 rounded-full text-xs font-semibold text-zinc-300 shadow-md">
@@ -591,6 +592,7 @@ export default function Home() {
           </motion.button>
         )}
       </AnimatePresence>
+      <Footer />
     </main>
   );
 }

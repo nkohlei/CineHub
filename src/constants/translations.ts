@@ -46,7 +46,8 @@ export const translations = {
     watchDate: "Watch Date:",
     saveEvaluation: "Save",
     watchedShortcut: "Mark as Watched",
-    similarMovies: "Similar Movies & Recommendations"
+    similarMovies: "Similar Movies & Recommendations",
+    footerText: "Designed & Built by nkohlei • Oxynema is a subsidiary of Oxypace"
   },
   tr: {
     totalFilms: "Toplam Film",
@@ -95,6 +96,7 @@ export const translations = {
     watchDate: "İzlenme Tarihi:",
     saveEvaluation: "Kaydet",
     watchedShortcut: "İzlendi İşaretle",
-    similarMovies: "Benzer Filmler ve Öneriler"
+    similarMovies: "Benzer Filmler ve Öneriler",
+    footerText: "nkohlei tarafından Tasarlandı ve Geliştirildi • Oxynema, Oxypace'in bir iştirakidir"
   }
 };
