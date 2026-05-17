@@ -241,9 +241,25 @@ export default function Home() {
             <Film className="w-8 h-8 text-white animate-float" />
           </div>
 
-          <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">
-              Welcome to <span className="gradient-text">Oxynema</span>
-            </h2>
+          {/* Refactored Premium Welcome Header */}
+          <div className="flex flex-col items-center gap-1.5 mt-5 mb-3 select-none">
+              {/* Screen Reader Only text for accessibility and clean SEO indexation */}
+              <h2 className="sr-only">Welcome to Oxynema</h2>
+              
+              {/* Minimalist Subtitle */}
+              <span className="text-zinc-400 text-xs font-bold tracking-widest uppercase opacity-80">
+                  Welcome to
+              </span>
+              
+              {/* The Majestic Silver Handwritten Logo */}
+              <Image 
+                  src={LogoImage} 
+                  alt="Oxynema Brand Logo" 
+                  height={54} // Perfectly scaled to fit inside the compact modal layout
+                  priority // Loaded instantly for maximum loading efficiency
+                  className="h-12 sm:h-14 w-auto transform hover:scale-102 transition-transform duration-300"
+              />
+          </div>
           <p className="text-zinc-400 text-sm mb-8 leading-relaxed max-w-sm">
             Your premium movie tracking dashboard. Sign in with your Google account to manage your personal watchlist, analyze stats, and spin the roulette.
           </p>
