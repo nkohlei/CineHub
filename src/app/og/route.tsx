@@ -4,60 +4,53 @@ export const runtime = 'edge';
 
 export async function GET() {
   try {
+    const siteUrl = process.env.NEXTAUTH_URL || 'https://oxynema.vercel.app';
+    // Generate the dynamic image context using code (satori)
     return new ImageResponse(
       (
+        // Root Container: Essential for background constraints
         <div
           style={{
             height: '100%',
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#09090b', // Custom ultra-dark charcoal/black
+            backgroundColor: '#000000', // Black fallback
             position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          {/* Futuristic stylized glowing geometric blur in the center */}
-          <div
+          {/* 1. Cinematic Movie Collage Background */}
+          {/* IMPORTANT: We will rely on Satori's Image embedding but must dim it intensely to save bytes */}
+          <img
+            src={`${siteUrl}/images/auth-bg.jpg`} // Existing dimmed auth background collage
+            alt="Cinematic Background"
             style={{
               position: 'absolute',
-              width: '600px',
-              height: '300px',
-              background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(0,0,0,0) 70%)',
-              top: '165px',
-              left: '300px',
-              zIndex: 0,
+              inset: 0,
+              width: '1200px',
+              height: '630px',
+              objectFit: 'cover',
+              // CRITICAL OPTIMIZATION: Maximize dimming to increase compression ratio and stay <300KB
+              opacity: 0.18, 
             }}
           />
 
-          {/* Premium Branded Title */}
-          <h1
+          {/* 2. Premium Silver Handwritten Logo Image */}
+          {/* Positioned dead center */}
+          <img
+            src={`${siteUrl}/images/og-logo.png`} // Copy of src/app/oxynema-logo.png for edge loading
+            alt="Oxynema Premium Silver Logo"
             style={{
-              fontSize: '120px',
-              fontWeight: 900,
-              color: '#ffffff',
-              letterSpacing: '-0.04em',
-              marginBottom: '10px',
-              zIndex: 1,
+              // Sizing logic: Scaled down slightly to fit balanced inside the share card
+              height: '120px', 
+              width: 'auto',
+              // Optional: Add a subtle drop shadow to make the silver stand out even more against the dimmed posters
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.6))', 
+              zIndex: 1, // Sits above the background collage
             }}
-          >
-            Oxynema
-          </h1>
-
-          {/* Corporate Subtitle */}
-          <p
-            style={{
-              fontSize: '28px',
-              fontWeight: 500,
-              color: '#a1a1aa', // zinc-400
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              zIndex: 1,
-            }}
-          >
-            A Subsidiary of Oxypace
-          </p>
+          />
         </div>
       ),
       {
@@ -66,6 +59,7 @@ export async function GET() {
       }
     );
   } catch (e) {
+    console.error("Failed to generate image:", e);
     return new Response(`Failed to generate image`, { status: 500 });
   }
 }
