@@ -2,13 +2,13 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const siteUrl = process.env.NEXTAUTH_URL || 'https://oxynema.vercel.app';
-    // Generate the dynamic image context using code (satori)
+    // Dynamically capture the exact live deployment URL
+    const { origin } = new URL(request.url);
+
     return new ImageResponse(
       (
-        // Root Container: Essential for background constraints
         <div
           style={{
             height: '100%',
@@ -16,15 +16,14 @@ export async function GET() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#000000', // Black fallback
+            backgroundColor: '#000000',
             position: 'relative',
             overflow: 'hidden',
           }}
         >
-          {/* 1. Cinematic Movie Collage Background */}
-          {/* IMPORTANT: We will rely on Satori's Image embedding but must dim it intensely to save bytes */}
+          {/* 1. Dimmed Movie Collage Background (Using secure dynamic origin) */}
           <img
-            src={`${siteUrl}/images/auth-bg.jpg`} // Existing dimmed auth background collage
+            src={`${origin}/images/auth-bg.jpg`}
             alt="Cinematic Background"
             style={{
               position: 'absolute',
@@ -32,23 +31,19 @@ export async function GET() {
               width: '1200px',
               height: '630px',
               objectFit: 'cover',
-              // CRITICAL OPTIMIZATION: Maximize dimming to increase compression ratio and stay <300KB
-              opacity: 0.18, 
+              opacity: 0.18, // Intensely dimmed to stay under WhatsApp's 300KB limit
             }}
           />
 
-          {/* 2. Premium Silver Handwritten Logo Image */}
-          {/* Positioned dead center */}
+          {/* 2. Premium Silver Handwritten Logo (Using secure dynamic origin) */}
           <img
-            src={`${siteUrl}/images/og-logo.png`} // Copy of src/app/oxynema-logo.png for edge loading
+            src={`${origin}/images/og-logo.png`}
             alt="Oxynema Premium Silver Logo"
             style={{
-              // Sizing logic: Scaled down slightly to fit balanced inside the share card
-              height: '120px', 
+              height: '130px',
               width: 'auto',
-              // Optional: Add a subtle drop shadow to make the silver stand out even more against the dimmed posters
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.6))', 
-              zIndex: 1, // Sits above the background collage
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
+              zIndex: 1,
             }}
           />
         </div>
@@ -59,7 +54,7 @@ export async function GET() {
       }
     );
   } catch (e) {
-    console.error("Failed to generate image:", e);
+    console.error("Failed to generate dynamic OG image:", e);
     return new Response(`Failed to generate image`, { status: 500 });
   }
 }
