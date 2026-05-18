@@ -16,6 +16,43 @@ export const authOptions: NextAuthOptions = {
       if (session?.user && user?.id) {
         (session.user as any).id = user.id;
         
+        // Ensure user has a unique 6-character alphanumeric shareId
+        const dbUser = user as any;
+        let currentShareId = dbUser.shareId;
+        
+        if (!currentShareId) {
+          const generateShareId = () => {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let result = "";
+            for (let i = 0; i < 6; i++) {
+              result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+          };
+          
+          let uniqueId = generateShareId();
+          let isUnique = false;
+          while (!isUnique) {
+            const existing = await prisma.user.findUnique({
+              where: { shareId: uniqueId },
+            });
+            if (!existing) {
+              isUnique = true;
+            } else {
+              uniqueId = generateShareId();
+            }
+          }
+          
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { shareId: uniqueId },
+          });
+          currentShareId = uniqueId;
+          console.log(`Generated shareId: ${uniqueId} for user: ${user.id}`);
+        }
+        
+        (session.user as any).shareId = currentShareId;
+        
         // Claim existing movies on first login
         try {
           const unclaimedCount = await prisma.movie.count({

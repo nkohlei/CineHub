@@ -44,6 +44,12 @@ model User {
   accounts      Account[]
   sessions      Session[]
   movies        Movie[]
+  shareId       String?   @unique
+  friendIds     String[]  @db.ObjectId
+  friends       User[]    @relation("UserFriends", fields: [friendIds], references: [id])
+  friendOfIds   String[]  @db.ObjectId
+  friendOf      User[]    @relation("UserFriends", fields: [friendOfIds], references: [id])
+  inbox         Json?     @default("[]")
 }
 
 model VerificationToken {

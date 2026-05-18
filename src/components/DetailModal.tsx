@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { MovieRecord, CastMember } from "@/lib/types";
-import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -13,6 +13,8 @@ interface DetailModalProps {
   onMarkWatched?: (id: string, tagColor: string) => void;
   onDelete?: (id: string) => void;
   onOpenEvaluation?: (movie: MovieRecord) => void;
+  friends?: { id: string; name: string; shareId: string; image?: string }[];
+  showToast?: (message: string, type: "success" | "error") => void;
 }
 
 interface FullDetails {
@@ -34,7 +36,7 @@ interface RecommendedMovie {
   release_date?: string;
 }
 
-export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, onOpenEvaluation }: DetailModalProps) {
+export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, onOpenEvaluation, friends = [], showToast }: DetailModalProps) {
   const { t, language } = useLanguage();
   const [details, setDetails] = useState<FullDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,57 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const [activeTmdbId, setActiveTmdbId] = useState<number | null>(null);
   const [activeTitle, setActiveTitle] = useState("");
   const [recommendations, setRecommendations] = useState<RecommendedMovie[]>([]);
+
+  const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
+  const [sharingUserId, setSharingUserId] = useState<string | null>(null);
+
+  const handleShareMovie = async (friend: { id: string; name: string }) => {
+    if (!movie) return;
+    setSharingUserId(friend.id);
+    try {
+      // Build movie details to share
+      const activeMovieObj = {
+        title: activeTitle,
+        tmdbId: activeTmdbId,
+        rating: details?.rating || movie.rating || null,
+        imdbRating: activeTmdbId === movie.tmdbId ? movie.imdbRating : (details?.rating?.toString() || null),
+        posterPath: activeTmdbId === movie.tmdbId ? movie.posterPath : (details?.posterUrl ? details.posterUrl.substring(details.posterUrl.indexOf("/t/p/")) : null),
+        backdropPath: activeTmdbId === movie.tmdbId ? movie.backdropPath : (details?.backdropUrl ? details.backdropUrl.substring(details.backdropUrl.indexOf("/t/p/")) : null),
+        trailerKey: activeTmdbId === movie.tmdbId ? movie.trailerKey : (details?.trailerKey || null),
+        releaseDate: details?.year || movie.releaseDate || null,
+        cast: details?.cast ? details.cast.slice(0, 10) : movie.cast
+      };
+
+      const res = await fetch("/api/user/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          friendId: friend.id,
+          type: "movie",
+          data: activeMovieObj
+        })
+      });
+
+      if (res.ok) {
+        if (showToast) {
+          showToast(`${activeTitle} ${language === 'tr' ? 'başarıyla paylaşıldı!' : 'shared successfully!'}`, "success");
+        }
+        setSharePopoverOpen(false);
+      } else {
+        const errorData = await res.json();
+        if (showToast) {
+          showToast(errorData.error || "Failed to share movie", "error");
+        }
+      }
+    } catch (err) {
+      console.error("Error sharing movie:", err);
+      if (showToast) {
+        showToast("Connection error", "error");
+      }
+    } finally {
+      setSharingUserId(null);
+    }
+  };
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -252,9 +305,14 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
             <div className="px-4 py-6 md:px-10 md:py-12">
 
               {/* Title & meta */}
-              <div className="flex flex-wrap items-start gap-4 mb-5">
-                <div className="flex-1">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white">{activeTitle}</h2>
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+                <div className="flex-1 min-w-[250px]">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center flex-wrap gap-y-2">
+                    {activeTitle}
+                    <span className="inline-flex items-center gap-1 ml-3 text-sm font-bold text-[#F5C518] bg-[#F5C518]/10 px-2 py-0.5 rounded border border-[#F5C518]/20">
+                      IMDb {activeTmdbId === movie?.tmdbId ? (movie?.imdbRating || "...") : (details?.rating || "...")}
+                    </span>
+                  </h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2 text-xs sm:text-sm text-zinc-400">
                     {details?.year && <span>{details.year}</span>}
                     {details?.runtime ? (
@@ -268,25 +326,81 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 relative z-50">
                   {/* Watched Shortcut Button */}
                   {!movie?.isWatched && activeTmdbId === movie?.tmdbId && onOpenEvaluation && (
                     <button
                       onClick={() => onOpenEvaluation(movie)}
-                      className="flex items-center gap-2 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
+                      className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
                     >
                       <Eye className="w-4 h-4 text-purple-400" />
                       <span>{t.watchedShortcut}</span>
                     </button>
                   )}
 
-                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#F5C518]/10 border border-[#F5C518]/30">
-                    <div className="bg-[#F5C518] text-black font-bold px-2 py-0.5 rounded-sm text-xs tracking-tight">IMDb</div>
-                    <div>
-                      <div className="text-lg font-bold text-[#F5C518] font-mono">{activeTmdbId === movie?.tmdbId ? movie?.imdbRating : (details?.rating || "...")} <span className="text-xs text-zinc-500">/ 10</span></div>
-                      <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Real Score</div>
+                  {/* Share Button (always visible if movie exists) */}
+                  {movie && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setSharePopoverOpen(!sharePopoverOpen)}
+                        className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
+                      >
+                        <Send className="w-4 h-4 text-emerald-400" />
+                        <span>{t.share}</span>
+                      </button>
+
+                      {/* Click-outside backdrop overlay to dismiss popover gracefully */}
+                      {sharePopoverOpen && (
+                        <div 
+                          className="fixed inset-0 z-[90] cursor-default" 
+                          onClick={() => setSharePopoverOpen(false)}
+                        />
+                      )}
+
+                      {/* Share Action Popover */}
+                      <AnimatePresence>
+                        {sharePopoverOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-0 mt-2 w-56 z-[100] origin-top-right bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.7)]"
+                          >
+                            <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider px-2.5 py-1.5 border-b border-zinc-800/80 mb-1">{t.friendsTitle}</p>
+                            {friends.length === 0 ? (
+                              <p className="text-xs text-zinc-500 px-2.5 py-3 text-center">{t.noFriends}</p>
+                            ) : (
+                              <div className="max-h-40 overflow-y-auto scrollbar-none space-y-0.5">
+                                {friends.map((friend) => (
+                                  <button
+                                    key={friend.id}
+                                    disabled={sharingUserId !== null}
+                                    onClick={() => handleShareMovie(friend)}
+                                    className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center justify-between hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer disabled:opacity-50"
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      {friend.image ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={friend.image} alt={friend.name} className="w-4 h-4 rounded-full border border-purple-500/20" />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[8px]">{friend.name?.[0] || "U"}</div>
+                                      )}
+                                      <span className="truncate">{friend.name}</span>
+                                    </div>
+                                    {sharingUserId === friend.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                                    ) : (
+                                      <span className="text-[9px] text-zinc-600 font-mono">{friend.shareId}</span>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

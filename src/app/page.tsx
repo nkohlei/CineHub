@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieRecord } from "@/lib/types";
-import { Sparkles, Film, CheckCircle2, Loader2, ArrowUp, Eye, EyeOff, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
+import { Sparkles, Film, CheckCircle2, Loader2, ArrowUp, Eye, EyeOff, SlidersHorizontal, ChevronDown, Check, Send, Users } from "lucide-react";
 import TabBar from "@/components/TabBar";
 import StatsBar from "@/components/StatsBar";
 import MovieCard from "@/components/MovieCard";
@@ -18,12 +18,12 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Image from "next/image";
 import LogoImage from "@/app/oxynema-logo.png";
 import AuthBg from "../../public/images/auth-bg.jpg";
+import FriendsModal from "@/components/FriendsModal";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const { t, language } = useLanguage();
 
-  
   const [movies, setMovies] = useState<MovieRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
   const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
@@ -36,6 +36,24 @@ export default function Home() {
   const [showAllRatings, setShowAllRatings] = useState(false);
   const [sortBy, setSortBy] = useState<"imdb" | "releaseDate" | "none">("none");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Social & Export Action States
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [inbox, setInbox] = useState<any[]>([]);
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false);
+  const [sendListPopoverOpen, setSendListPopoverOpen] = useState(false);
+  const [sendingListUserId, setSendingListUserId] = useState<string | null>(null);
+
+  const showToast = useCallback((message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    if (toastTimeoutId) clearTimeout(toastTimeoutId);
+    const id = setTimeout(() => {
+      setToast(null);
+    }, 4000);
+    setToastTimeoutId(id);
+  }, [toastTimeoutId]);
 
   const isAnyModalOpen = selectedMovie !== null || evaluationMovie !== null || rouletteOpen;
 
@@ -126,11 +144,170 @@ export default function Home() {
     }
   };
 
+  const fetchSocialProfile = useCallback(async () => {
+    if (!session) return;
+    try {
+      const res = await fetch("/api/user/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setFriends(data.friends || []);
+        setInbox(data.inbox || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch social profile:", err);
+    }
+  }, [session]);
+
+  const handleAddFriend = async (shareId: string): Promise<string | null> => {
+    try {
+      const res = await fetch("/api/user/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shareId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(language === 'tr' ? "Arkadaş başarıyla eklendi!" : "Friend added successfully!", "success");
+        fetchSocialProfile();
+        return null;
+      } else {
+        return data.error || "Failed to add friend";
+      }
+    } catch (err) {
+      return "Connection error";
+    }
+  };
+
+  const handleRemoveFriend = async (friendId: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/user/friends", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friendId })
+      });
+      if (res.ok) {
+        showToast(language === 'tr' ? "Arkadaş silindi." : "Friend removed.", "success");
+        fetchSocialProfile();
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
+  };
+
+  const handleAcceptShare = async (inboxItemId: string): Promise<number | null> => {
+    try {
+      const res = await fetch("/api/user/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxItemId, action: "accept" })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(
+          language === 'tr'
+            ? `${data.addedCount} yeni film listenize eklendi!`
+            : `${data.addedCount} new movies added to your list!`,
+          "success"
+        );
+        fetchSocialProfile();
+        fetchMovies();
+        return data.addedCount;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return null;
+  };
+
+  const handleDeleteShare = async (inboxItemId: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/user/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxItemId, action: "delete" })
+      });
+      if (res.ok) {
+        showToast(language === 'tr' ? "Paylaşım yoksayıldı." : "Share ignored.", "success");
+        fetchSocialProfile();
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
+  };
+
+  const handleDownloadList = () => {
+    if (movies.length === 0) {
+      showToast(language === 'tr' ? "Listeniz boş!" : "Your list is empty!", "error");
+      return;
+    }
+    const dataStr = JSON.stringify(movies, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `oxynema_watchlist_${new Date().toISOString().split('T')[0]}.json`;
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    showToast(language === 'tr' ? "Liste başarıyla indirildi!" : "List downloaded successfully!", "success");
+  };
+
+  const handleSendListToFriend = async (friend: { id: string; name: string }) => {
+    if (movies.length === 0) {
+      showToast(language === 'tr' ? "Gönderilecek film yok!" : "No movies to send!", "error");
+      return;
+    }
+    setSendingListUserId(friend.id);
+    try {
+      const listPayload = movies.map(m => ({
+        title: m.title,
+        tmdbId: m.tmdbId,
+        posterPath: m.posterPath,
+        backdropPath: m.backdropPath,
+        trailerKey: m.trailerKey,
+        rating: m.rating,
+        imdbRating: m.imdbRating,
+        releaseDate: m.releaseDate,
+        cast: m.cast
+      }));
+
+      const res = await fetch("/api/user/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          friendId: friend.id,
+          type: "list",
+          data: listPayload
+        })
+      });
+
+      if (res.ok) {
+        showToast(
+          language === 'tr'
+            ? `Listeniz ${friend.name} ile paylaşıldı!`
+            : `Your list was shared with ${friend.name}!`,
+          "success"
+        );
+        setSendListPopoverOpen(false);
+      } else {
+        const errData = await res.json();
+        showToast(errData.error || "Failed to send list", "error");
+      }
+    } catch (err) {
+      showToast("Connection error", "error");
+    } finally {
+      setSendingListUserId(null);
+    }
+  };
+
   useEffect(() => { 
     if (session) {
       fetchMovies(); 
+      fetchSocialProfile();
     }
-  }, [fetchMovies, session]);
+  }, [fetchMovies, fetchSocialProfile, session]);
 
   const watchlist = movies.filter((m) => !m.isWatched);
   const watched = movies.filter((m) => m.isWatched).sort(
@@ -356,6 +533,22 @@ export default function Home() {
                   </button>
                 </div>
               )}
+
+              {/* Blue Zone: Share ID Display & Copy */}
+              {session.user && (session.user as any).shareId && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText((session.user as any).shareId);
+                    showToast(t.copied, "success");
+                  }}
+                  className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 px-3 py-1.5 rounded-full text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md select-none font-mono hover:shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                  title="Click to copy your Share ID"
+                >
+                  <span className="text-zinc-500 font-bold font-sans uppercase text-[10px] tracking-wider">{language === 'tr' ? 'Kod' : 'ID'}:</span>
+                  <span>{(session.user as any).shareId}</span>
+                </button>
+              )}
+
               {session.user && <LanguageSwitcher />}
             </div>
             <p className="text-zinc-500 text-sm mt-1 font-medium">Your personal movie tracker & roulette</p>
@@ -392,7 +585,23 @@ export default function Home() {
               )}
             </div>
           </div>
-          <GlobalSearch onMovieAdded={handleMovieAdded} />
+          
+          {/* Red Zone: Friends Button & Search Bar */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => setFriendsModalOpen(true)}
+              className="relative p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
+              title={language === 'tr' ? "Arkadaşlar & Gelen Kutusu" : "Friends & Inbox"}
+            >
+              <Users className="w-5 h-5 text-purple-400" />
+              {inbox.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-zinc-950 animate-pulse">
+                  {inbox.length}
+                </span>
+              )}
+            </button>
+            <GlobalSearch onMovieAdded={handleMovieAdded} />
+          </div>
         </div>
         <StatsBar total={movies.length} watched={watched.length} />
       </motion.header>
@@ -408,6 +617,75 @@ export default function Home() {
         
         {/* Sleek Glassmorphism Control Panel */}
         <div className="flex flex-wrap items-center gap-3 bg-zinc-900/40 p-1.5 rounded-2xl border border-zinc-800/60 backdrop-blur-md self-start md:self-auto w-full md:w-auto justify-between sm:justify-start">
+          
+          {/* Green Zone: List Management Controls */}
+          {session.user && (
+            <div className="flex items-center gap-2">
+              {/* Download List Button */}
+              <button
+                onClick={handleDownloadList}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                title={t.downloadList}
+              >
+                <ArrowUp className="w-3.5 h-3.5 text-emerald-400 rotate-180" />
+                <span className="hidden lg:inline">{t.downloadList}</span>
+              </button>
+
+              {/* Send List Button & Popover */}
+              <div className="relative">
+                <button
+                  onClick={() => setSendListPopoverOpen(!sendListPopoverOpen)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                  title={t.sendList}
+                >
+                  <Send className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="hidden lg:inline">{t.sendList}</span>
+                </button>
+
+                {sendListPopoverOpen && (
+                  <div 
+                    className="fixed inset-0 z-[90] cursor-default" 
+                    onClick={() => setSendListPopoverOpen(false)}
+                  />
+                )}
+
+                <AnimatePresence>
+                  {sendListPopoverOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute left-0 lg:left-auto lg:right-0 mt-2 w-52 z-[100] origin-top bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.7)]"
+                    >
+                      <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider px-2.5 py-1.5 border-b border-zinc-800/80 mb-1">{t.friendsTitle}</p>
+                      {friends.length === 0 ? (
+                        <p className="text-xs text-zinc-500 px-2.5 py-3 text-center">{t.noFriends}</p>
+                      ) : (
+                        <div className="max-h-40 overflow-y-auto scrollbar-none space-y-0.5">
+                          {friends.map((friend) => (
+                            <button
+                              key={friend.id}
+                              disabled={sendingListUserId !== null}
+                              onClick={() => handleSendListToFriend(friend)}
+                              className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center justify-between hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer disabled:opacity-50"
+                            >
+                              <span className="truncate">{friend.name}</span>
+                              {sendingListUserId === friend.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-purple-400" />
+                              ) : (
+                                <span className="text-[9px] text-zinc-600 font-mono">{friend.shareId}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
           {/* IMDb Ratings Toggle Button */}
           <button
             onClick={() => setShowAllRatings(!showAllRatings)}
@@ -589,7 +867,44 @@ export default function Home() {
           setSelectedMovie(null);
           setEvaluationMovie(movie);
         }}
+        friends={friends}
+        showToast={showToast}
       />
+
+      {/* Friends & Inbox Modal */}
+      <FriendsModal
+        isOpen={friendsModalOpen}
+        onClose={() => setFriendsModalOpen(false)}
+        friends={friends}
+        inbox={inbox}
+        onAddFriend={handleAddFriend}
+        onRemoveFriend={handleRemoveFriend}
+        onAcceptShare={handleAcceptShare}
+        onDeleteShare={handleDeleteShare}
+      />
+
+      {/* Custom Floating Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2.5 px-4.5 py-3 rounded-2xl border text-sm font-semibold shadow-2xl backdrop-blur-xl ${
+              toast.type === "success"
+                ? "bg-emerald-950/90 border-emerald-500/30 text-emerald-300"
+                : "bg-red-950/90 border-red-500/30 text-red-300"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <Check className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <span className="text-red-400 text-base leading-none font-bold select-none">✕</span>
+            )}
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Evaluation Modal */}
       <AnimatePresence>

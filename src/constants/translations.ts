@@ -45,9 +45,22 @@ export const translations = {
     awful: "Awful",
     watchDate: "Watch Date:",
     saveEvaluation: "Save",
-    watchedShortcut: "Mark as Watched",
+    watchedShortcut: "Watched",
     similarMovies: "Similar Movies & Recommendations",
-    footerText: "Designed & Built by nkohlei • Oxynema is a subsidiary of Oxypace"
+    footerText: "Designed & Built by nkohlei • Oxynema is a subsidiary of Oxypace",
+    share: "Share",
+    downloadList: "Download List",
+    sendList: "Send List",
+    addFriend: "Add Friend",
+    friendsTitle: "Friends & Inbox",
+    friendPlaceholder: "Enter 6-char Share ID...",
+    noFriends: "No friends added yet",
+    emptyInbox: "Your inbox is empty",
+    incomingShare: "Shared by",
+    mergeList: "Merge List",
+    acceptMovie: "Accept",
+    copied: "Share ID copied to clipboard!",
+    shareSuccess: "Shared successfully!"
   },
   tr: {
     totalFilms: "Toplam Film",
@@ -95,8 +108,21 @@ export const translations = {
     awful: "Berbat",
     watchDate: "İzlenme Tarihi:",
     saveEvaluation: "Kaydet",
-    watchedShortcut: "İzlendi İşaretle",
+    watchedShortcut: "İzlendi",
     similarMovies: "Benzer Filmler ve Öneriler",
-    footerText: "nkohlei tarafından Tasarlandı ve Geliştirildi • Oxynema, Oxypace'in bir iştirakidir"
+    footerText: "nkohlei tarafından Tasarlandı ve Geliştirildi • Oxynema, Oxypace'in bir iştirakidir",
+    share: "Paylaş",
+    downloadList: "Listeyi İndir",
+    sendList: "Listeyi Gönder",
+    addFriend: "Arkadaş Ekle",
+    friendsTitle: "Arkadaşlar & Gelen Kutusu",
+    friendPlaceholder: "6 haneli Paylaşım Kodu girin...",
+    noFriends: "Henüz arkadaş eklenmedi",
+    emptyInbox: "Gelen kutunuz boş",
+    incomingShare: "Paylaşan",
+    mergeList: "Listeyi Birleştir",
+    acceptMovie: "Kabul Et",
+    copied: "Paylaşım Kodu panoya kopyalandı!",
+    shareSuccess: "Başarıyla paylaşıldı!"
   }
 };
