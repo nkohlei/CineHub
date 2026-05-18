@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og",
+        url: "/images/og-preview.png", // High-performance static asset redirection
         width: 1200,
         height: 630,
         alt: "Oxynema — Premium Film Günlüğü & Ruleti",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Oxynema — Kişisel Film Takip & Rulet Platformu",
     description: "Sinema tutkunları için Oxypace çatısı altında geliştirilen modern film izleme günlüğü.",
-    images: ["/og"],
+    images: ["/images/og-preview.png"], // Mirroring static open graph delivery
   },
 };
 
