@@ -1,10 +1,10 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
+export const runtime = 'edge'; // Fully safe with explicit attributes
 
 export async function GET(request: Request) {
   try {
-    // Dynamically capture the exact live deployment URL
+    // Dynamically fetch the absolute running origin url context safely
     const { origin } = new URL(request.url);
 
     return new ImageResponse(
@@ -21,28 +21,27 @@ export async function GET(request: Request) {
             overflow: 'hidden',
           }}
         >
-          {/* 1. Dimmed Movie Collage Background (Using secure dynamic origin) */}
+          {/* 1. Cinematic Background Collage - Force explicit dimensions via attributes */}
           <img
             src={`${origin}/images/auth-bg.jpg`}
             alt="Cinematic Background"
+            width="1200"
+            height="630"
             style={{
               position: 'absolute',
               inset: 0,
-              width: '1200px',
-              height: '630px',
-              objectFit: 'cover',
-              opacity: 0.18, // Intensely dimmed to stay under WhatsApp's 300KB limit
+              opacity: 0.18,
             }}
           />
 
-          {/* 2. Premium Silver Handwritten Logo (Using secure dynamic origin) */}
+          {/* 2. Premium Silver Handwritten Logo */}
+          {/* CRITICAL: Satori REQUIRES explicit width and height attributes here to prevent 0x0 collapsing */}
           <img
             src={`${origin}/images/og-logo.png`}
-            alt="Oxynema Premium Silver Logo"
+            alt="Oxynema Silver Logo"
+            width="400" 
+            height="160"
             style={{
-              height: '130px',
-              width: 'auto',
-              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))',
               zIndex: 1,
             }}
           />
