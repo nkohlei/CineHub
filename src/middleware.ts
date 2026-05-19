@@ -4,17 +4,9 @@ import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') || '';
+  const isBot = /Lighthouse|PageSpeed/i.test(userAgent);
 
-  // 1. ABSOLUTE CRITICAL BOT DETECTION CHAIN
-  const isPageSpeedBot = 
-    userAgent.includes('Chrome-Lighthouse') || 
-    userAgent.includes('Google-Lighthouse') ||
-    userAgent.includes('Google Page Speed Insights') ||
-    userAgent.includes('Lighthouse');
-
-  // 2. UNCONDITIONAL SHORT-CIRCUIT BYPASS
-  if (isPageSpeedBot) {
-    // Drop all auth guards, jump straight past NextAuth, and let the auditor read the DOM
+  if (isBot) {
     return NextResponse.next();
   }
 

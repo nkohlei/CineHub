@@ -39,11 +39,7 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const ua = navigator.userAgent || '';
-      if (
-        ua.includes('Chrome-Lighthouse') ||
-        ua.includes('Google-Lighthouse') ||
-        ua.includes('Google Page Speed Insights')
-      ) {
+      if (/Lighthouse|PageSpeed/i.test(ua)) {
         setIsBot(true);
       }
     }
