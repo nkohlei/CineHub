@@ -7,9 +7,6 @@ import { Sparkles, Film, CheckCircle2, Loader2, ArrowUp, Eye, EyeOff, SlidersHor
 import TabBar from "@/components/TabBar";
 import StatsBar from "@/components/StatsBar";
 import MovieCard from "@/components/MovieCard";
-import DetailModal from "@/components/DetailModal";
-import EvaluationModal from "@/components/EvaluationModal";
-import MovieRoulette from "@/components/MovieRoulette";
 import GlobalSearch from "@/components/GlobalSearch";
 import Footer from "@/components/Footer";
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -19,8 +16,13 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Image from "next/image";
 import LogoImage from "@/app/oxynema-logo.png";
 import AuthBg from "../../public/images/auth-bg.jpg";
-import FriendsModal from "@/components/FriendsModal";
 import LoginPage from "./login/page";
+import dynamic from 'next/dynamic';
+
+const DetailModal = dynamic(() => import("@/components/DetailModal"), { ssr: false });
+const EvaluationModal = dynamic(() => import("@/components/EvaluationModal"), { ssr: false });
+const MovieRoulette = dynamic(() => import("@/components/MovieRoulette"), { ssr: false });
+const FriendsModal = dynamic(() => import("@/components/FriendsModal"), { ssr: false });
 
 export default function Home() {
   const { data: session, status } = useSession({
@@ -36,10 +38,18 @@ export default function Home() {
   const [isBot, setIsBot] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(24);
   
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth < 640);
+    }
+  }, [mounted]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -74,6 +84,10 @@ export default function Home() {
   const [showAllRatings, setShowAllRatings] = useState(false);
   const [sortBy, setSortBy] = useState<"imdb" | "releaseDate" | "none">("none");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [activeTab, sortBy]);
 
   // Social & Export Action States
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -750,20 +764,32 @@ export default function Home() {
           </p>
         </motion.div>
       ) : (
-        <motion.div
-          layout
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
-        >
-          {displayed.map((movie, index) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onSelect={setSelectedMovie}
-              index={index}
-              showRatingAlways={showAllRatings}
-            />
-          ))}
-        </motion.div>
+        <>
+          <motion.div
+            layout={isMobile ? false : "position"}
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
+          >
+            {displayed.slice(0, visibleCount).map((movie, index) => (
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                onSelect={setSelectedMovie}
+                index={index}
+                showRatingAlways={showAllRatings}
+              />
+            ))}
+          </motion.div>
+          {displayed.length > visibleCount && (
+            <div className="flex justify-center mt-8 mb-12">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 24)}
+                className="px-6 py-2.5 rounded-xl font-bold bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer shadow-md hover:shadow-purple-500/5"
+              >
+                {language === "tr" ? "Daha Fazla Göster" : "Load More"}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Floating Action Buttons */}

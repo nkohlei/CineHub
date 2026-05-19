@@ -51,11 +51,13 @@ export default function MovieCard({
     ? 'https://image.tmdb.org/t/p/w500' + movie.posterPath 
     : null;
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.8) }}
+      initial={isMobile ? false : { opacity: 0, y: 24 }}
+      animate={isMobile ? false : { opacity: 1, y: 0 }}
+      transition={isMobile ? undefined : { duration: 0.45, delay: Math.min(index * 0.04, 0.8) }}
       onClick={() => onSelect(movie)}
       className="group relative cursor-pointer rounded-2xl overflow-hidden glass-card"
     >
@@ -67,7 +69,7 @@ export default function MovieCard({
             alt={displayTitle}
             fill
             priority={index < 4}
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 15vw"
+            sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 20vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={() => setImgError(true)}
           />
