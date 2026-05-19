@@ -151,6 +151,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
     if (activeTmdbId) {
       setLoading(true);
       setShowTrailer(false);
+      setDetails(null); // Wipe old details instantly to prevent stale UI data
       fetch(`/api/tmdb/${activeTmdbId}?language=${language}`)
         .then((res) => res.json())
         .then((data) => { setDetails(data); setLoading(false); })
@@ -216,7 +217,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
   // Safely extract cast list from either movie or loaded details
   let castList: any[] = [];
-  if (movie && movie.cast) {
+  if (movie && movie.cast && activeTmdbId === movie.tmdbId) {
     try {
       const parsed = typeof movie.cast === "string" ? JSON.parse(movie.cast) : movie.cast;
       if (Array.isArray(parsed)) {
@@ -419,27 +420,42 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
               )}
 
               {/* Cast */}
-              {castList && castList.length > 0 && (
+              {loading ? (
                 <div className="mb-6">
                   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">{t.cast}</h3>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                    {castList.map((member) => (
-                      <div key={member.id} className="text-center">
-                        <div className="relative w-12 h-12 mx-auto rounded-full overflow-hidden bg-zinc-800/60 border border-zinc-700/30 mb-1.5">
-                          {member.profileUrl ? (
-                            <Image src={member.profileUrl} alt={member.name} fill className="object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-zinc-600" />
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-[11px] font-medium text-zinc-200 truncate">{member.name}</p>
-                        <p className="text-[10px] text-zinc-500 truncate">{member.character}</p>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="text-center animate-pulse">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-zinc-800/50 mb-1.5" />
+                        <div className="h-2.5 bg-zinc-800/40 rounded w-16 mx-auto mb-1" />
+                        <div className="h-2 bg-zinc-800/30 rounded w-12 mx-auto" />
                       </div>
                     ))}
                   </div>
                 </div>
+              ) : (
+                castList && castList.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">{t.cast}</h3>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                      {castList.map((member) => (
+                        <div key={member.id} className="text-center">
+                          <div className="relative w-12 h-12 mx-auto rounded-full overflow-hidden bg-zinc-800/60 border border-zinc-700/30 mb-1.5">
+                            {member.profileUrl ? (
+                              <Image src={member.profileUrl} alt={member.name} fill className="object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <User className="w-5 h-5 text-zinc-600" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[11px] font-medium text-zinc-200 truncate">{member.name}</p>
+                          <p className="text-[10px] text-zinc-500 truncate">{member.character}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
 
               {/* Recommendations */}
