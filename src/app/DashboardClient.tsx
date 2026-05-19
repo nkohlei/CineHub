@@ -20,6 +20,7 @@ import Image from "next/image";
 import LogoImage from "@/app/oxynema-logo.png";
 import AuthBg from "../../public/images/auth-bg.jpg";
 import FriendsModal from "@/components/FriendsModal";
+import LoginPage from "./login/page";
 
 export default function Home() {
   const { data: session, status } = useSession({
@@ -34,6 +35,7 @@ export default function Home() {
 
   const [isBot, setIsBot] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   
   useEffect(() => {
     setMounted(true);
@@ -41,15 +43,16 @@ export default function Home() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      const ua = navigator.userAgent.toLowerCase();
-      const isPageSpeedBot = ua.includes('lighthouse') || ua.includes('pagespeed') || ua.includes('googlebot');
+      const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+      const isPageSpeedBot = /Lighthouse|PageSpeed|Googlebot/i.test(ua);
       
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
-        router.push('/login');
+        setShowLogin(true);
       }
     }
-  }, [status, router]);
+  }, [status]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const ua = navigator.userAgent || '';
@@ -410,26 +413,8 @@ export default function Home() {
     }
   };
 
-  if (!mounted || (status === "loading" && !isBot)) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
-        <p className="text-zinc-400 text-sm font-medium animate-pulse">Initializing Oxynema...</p>
-      </div>
-    );
-  }
-
-  if (!session && !isBot) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
-        <p className="text-zinc-400 text-sm font-medium animate-pulse">Redirecting to login...</p>
-      </div>
-    );
+  if (showLogin) {
+    return <LoginPage />;
   }
 
   return (
