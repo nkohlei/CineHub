@@ -523,10 +523,10 @@ export default function Home() {
                     />
                   ) : (
                     <div className="w-3 h-3 md:w-5 md:h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[7px] md:text-[10px]">
-                      {session?.user.name?.[0] || "U"}
+                      {(session?.user?.name || "Sinemasever")[0]}
                     </div>
                   )}
-                  <span className="hidden md:inline text-zinc-400 max-w-[120px] truncate">{session?.user.name}</span>
+                  <span className="hidden md:inline text-zinc-400 max-w-[120px] truncate">{session?.user?.name || "Sinemasever"}</span>
                   <button
                     onClick={() => signOut()}
                     className="ml-0.5 md:ml-1 text-[8px] md:text-xs text-zinc-500 hover:text-zinc-300 hover:underline cursor-pointer border-none bg-transparent outline-none font-bold"
@@ -631,11 +631,11 @@ export default function Home() {
               <div className="relative">
                 <button
                   onClick={() => setSendListPopoverOpen(!sendListPopoverOpen)}
-                  className="flex items-center gap-1 md:gap-1.5 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-2 md:text-xs rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                  className="flex items-center gap-1 md:gap-2 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-4 md:py-2 md:text-sm rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
                   title={t.sendList}
                 >
                   <Send className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="hidden lg:inline">{t.sendList}</span>
+                  <span className="hidden md:inline">{t.sendList}</span>
                 </button>
 
                 {sendListPopoverOpen && (
