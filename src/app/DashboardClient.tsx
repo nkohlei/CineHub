@@ -797,7 +797,7 @@ export default function Home() {
       )}
 
       {/* Floating Action Buttons */}
-      {!selectedMovie && (
+      {!selectedMovie && !rouletteOpen && (
         <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
           
           {/* Dynamic Scroll-to-Top Button */}
