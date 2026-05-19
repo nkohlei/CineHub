@@ -22,6 +22,10 @@
     scrollbar-width: none;  /* Firefox */
 }
 
+html, body {
+  background-color: #09090b;
+}
+
 body {
   background: linear-gradient(165deg, #06060a 0%, #0c0c18 30%, #0a0f1a 60%, #050508 100%);
   color: var(--color-foreground);

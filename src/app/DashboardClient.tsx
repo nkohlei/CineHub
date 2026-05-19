@@ -500,7 +500,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex-1 px-4 sm:px-10 md:px-12 py-4 sm:py-6 md:py-8 max-w-7xl mx-auto w-full">
+    <main className="flex-1 px-3 sm:px-10 md:px-12 py-4 sm:py-6 md:py-8 max-w-7xl mx-auto w-full">
       <div className={isAnyModalOpen ? "modal-open-prevent-scroll flex-1 flex flex-col" : "flex-1 flex flex-col"}>
       {/* Header */}
       <motion.header
@@ -513,7 +513,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {/* Refactored Accessible Header */}
-              <h1 className="flex items-center justify-start relative h-16 lg:h-20 min-w-[150px]">
+              <h1 className="flex items-center justify-start relative h-8 sm:h-12 md:h-16 lg:h-20 min-w-[100px] md:min-w-[150px]">
                 {/* Important: Visually hidden text for SEO/Accessibility */}
                 <span className="sr-only">Oxynema - Kişisel Film Takip ve Rulet Platformu</span>
                 
@@ -523,27 +523,27 @@ export default function Home() {
                   alt="Oxynema - Premium el yazısı gümüş logo imza" 
                   height={72} // Sets height to approximate current font height (72px ~ 4xl-5xl)
                   priority // Critical: Loads with high priority for immediate display
-                  className="absolute left-0 h-16 lg:h-20 w-auto" // Maintains aspect ratio, responsive sizing
+                  className="absolute left-0 h-8 sm:h-12 md:h-16 lg:h-20 w-auto" // Maintains aspect ratio, responsive sizing
                 />
               </h1>
               {session?.user && (
-                <div className="flex items-center gap-2 bg-zinc-900/60 border border-zinc-800/80 px-2.5 py-1.5 rounded-full text-xs font-semibold text-zinc-300 shadow-md">
+                <div className="flex flex-row items-center gap-1 md:gap-2 bg-zinc-900/60 border border-zinc-800/80 px-1.5 py-1 md:px-4 md:py-2 rounded-full text-[9px] leading-none sm:text-xs md:text-sm font-semibold text-zinc-300 shadow-md">
                   {session?.user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={session?.user.image}
                       alt={session?.user.name || "Avatar"}
-                      className="w-5 h-5 rounded-full border border-purple-500/30"
+                      className="w-3 h-3 md:w-5 md:h-5 rounded-full border border-purple-500/30"
                     />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px]">
+                    <div className="w-3 h-3 md:w-5 md:h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[7px] md:text-[10px]">
                       {session?.user.name?.[0] || "U"}
                     </div>
                   )}
                   <span className="hidden md:inline text-zinc-400 max-w-[120px] truncate">{session?.user.name}</span>
                   <button
                     onClick={() => signOut()}
-                    className="ml-1 text-[10px] text-zinc-500 hover:text-zinc-300 hover:underline cursor-pointer border-none bg-transparent outline-none font-bold"
+                    className="ml-0.5 md:ml-1 text-[8px] md:text-xs text-zinc-500 hover:text-zinc-300 hover:underline cursor-pointer border-none bg-transparent outline-none font-bold"
                   >
                     {t.signOut}
                   </button>
@@ -557,10 +557,10 @@ export default function Home() {
                     navigator.clipboard.writeText((session?.user as any).shareId);
                     showToast(t.copied, "success");
                   }}
-                  className="flex items-center gap-1 sm:gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-1.5 md:text-xs rounded-full font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md select-none font-mono hover:shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                  className="flex flex-row items-center gap-1 md:gap-2 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 px-1.5 py-1 md:px-4 md:py-2 text-[9px] leading-none sm:text-xs md:text-sm rounded-full font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md select-none font-mono hover:shadow-[0_0_12px_rgba(168,85,247,0.15)]"
                   title="Click to copy your Share ID"
                 >
-                  <span className="text-zinc-500 font-bold font-sans uppercase text-[10px] tracking-wider">{language === 'tr' ? 'Kod' : 'ID'}:</span>
+                  <span className="text-zinc-500 font-bold font-sans uppercase text-[8px] md:text-[10px] tracking-wider">{language === 'tr' ? 'Kod' : 'ID'}:</span>
                   <span>{(session?.user as any).shareId}</span>
                 </button>
               )}
@@ -568,31 +568,33 @@ export default function Home() {
               {session?.user && <LanguageSwitcher />}
             </div>
             <p className="text-zinc-500 text-sm mt-1 font-medium">Your personal movie tracker & roulette</p>
-            <div className="flex items-center gap-3 mt-3.5 flex-wrap">
+            <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-row md:w-auto md:gap-4 mt-3.5">
               <button
                 disabled={syncing || syncingAll}
                 onClick={handleForceSync}
-                className="px-2.5 py-1.5 md:px-3.5 md:py-1.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-[11px] md:text-xs font-semibold text-purple-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
+                className="justify-center px-2 py-1.5 text-[10px] md:px-4 md:py-2 md:text-sm rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 font-semibold text-purple-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
               >
                 {syncing ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                  <Loader2 className="w-3 h-3 md:w-3.5 md:h-3.5 animate-spin text-purple-400" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 text-purple-400" />
                 )}
-                {t.forcePosters}
+                <span className="md:hidden">Sync Posters</span>
+                <span className="hidden md:inline">{t.forcePosters}</span>
               </button>
 
               <button
                 disabled={syncing || syncingAll}
                 onClick={handleSyncAll}
-                className="px-2.5 py-1.5 md:px-3.5 md:py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-[11px] md:text-xs font-semibold text-emerald-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
+                className="justify-center px-2 py-1.5 text-[10px] md:px-4 md:py-2 md:text-sm rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 font-semibold text-emerald-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
               >
                 {syncingAll ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  <Loader2 className="w-3 h-3 md:w-3.5 md:h-3.5 animate-spin text-emerald-400" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
                 )}
-                {t.massSync}
+                <span className="md:hidden">Sync IMDb</span>
+                <span className="hidden md:inline">{t.massSync}</span>
               </button>
 
 

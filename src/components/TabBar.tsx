@@ -20,12 +20,12 @@ export default function TabBar({ activeTab, onTabChange, watchlistCount, watched
 
 
   return (
-    <div className="flex gap-1 p-1.5 rounded-2xl glass">
+    <div className="flex gap-1 md:gap-3 p-1.5 rounded-2xl glass w-full sm:w-auto">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onTabChange(tab.key)}
-          className={`relative flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-colors duration-200 cursor-pointer
+          className={`relative flex-1 sm:flex-none flex justify-center items-center gap-1 md:gap-2.5 px-2 py-1.5 text-[10px] sm:text-xs md:px-6 md:py-3 md:text-base rounded-xl font-medium transition-colors duration-200 cursor-pointer
             ${activeTab === tab.key ? "text-white" : "text-zinc-500 hover:text-zinc-300"}`}
         >
           {activeTab === tab.key && (
@@ -38,7 +38,7 @@ export default function TabBar({ activeTab, onTabChange, watchlistCount, watched
           <tab.Icon className={`relative z-10 w-4 h-4 ${activeTab === tab.key ? "text-purple-400" : ""}`} />
           <span className="relative z-10">{tab.label}</span>
           <span
-            className={`relative z-10 px-2 py-0.5 rounded-full text-xs font-semibold
+            className={`relative z-10 px-1.5 py-0.5 text-[8px] md:px-2 md:py-1 md:text-xs rounded-full font-semibold
               ${activeTab === tab.key
                 ? "bg-purple-500/20 text-purple-300"
                 : "bg-zinc-800/60 text-zinc-600"
