@@ -31,6 +31,11 @@ export default function Home() {
   const { t, language } = useLanguage();
 
   const [isBot, setIsBot] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const ua = navigator.userAgent || '';
@@ -395,7 +400,7 @@ export default function Home() {
     }
   };
 
-  if (status === "loading") {
+  if (!mounted || (status === "loading" && !isBot)) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -572,7 +577,7 @@ export default function Home() {
                   <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 text-purple-400" />
                 )}
                 <span className="md:hidden">Sync Posters</span>
-                <span className="hidden md:inline">{t.forcePosters}</span>
+                <span className="hidden md:inline">Force Sync Missing Posters</span>
               </button>
 
               <button
@@ -586,7 +591,7 @@ export default function Home() {
                   <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
                 )}
                 <span className="md:hidden">Sync IMDb</span>
-                <span className="hidden md:inline">{t.massSync}</span>
+                <span className="hidden md:inline">Mass Sync IMDb Ratings</span>
               </button>
 
 
@@ -638,10 +643,10 @@ export default function Home() {
                 <button
                   onClick={() => setSendListPopoverOpen(!sendListPopoverOpen)}
                   className="flex items-center gap-1 md:gap-2 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-4 md:py-2 md:text-sm rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
-                  title={t.sendList}
+                  title="Send List"
                 >
                   <Send className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="hidden md:inline">{t.sendList}</span>
+                  <span className="hidden md:inline">Send List</span>
                 </button>
 
                 {sendListPopoverOpen && (
