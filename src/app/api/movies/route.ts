@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         
         const movies = await prisma.movie.findMany({
           where,
-          orderBy: watched === "true" ? { watchedAt: "desc" } : { createdAt: "asc" },
+          orderBy: watched === "true" ? { watchedAt: "desc" } : { createdAt: "desc" },
         });
         
         return NextResponse.json(movies);
@@ -58,8 +58,11 @@ export async function GET(request: NextRequest) {
     data = data.filter((m) => m.isWatched).sort(
       (a, b) => new Date(b.watchedAt || 0).getTime() - new Date(a.watchedAt || 0).getTime()
     );
-  } else if (watched === "false") {
-    data = data.filter((m) => !m.isWatched);
+  } else {
+    const filtered = watched === "false" ? data.filter((m) => !m.isWatched) : data;
+    data = [...filtered].sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
   }
 
   return NextResponse.json(data);

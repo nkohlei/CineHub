@@ -347,7 +347,9 @@ export default function Home() {
     }
   }, [fetchMovies, fetchSocialProfile, session]);
 
-  const watchlist = useMemo(() => movies.filter((m) => !m.isWatched), [movies]);
+  const watchlist = useMemo(() => movies.filter((m) => !m.isWatched).sort(
+    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  ), [movies]);
   const watched = useMemo(() => movies.filter((m) => m.isWatched).sort(
     (a, b) => new Date(b.watchedAt || 0).getTime() - new Date(a.watchedAt || 0).getTime()
   ), [movies]);
