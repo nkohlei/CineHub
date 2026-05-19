@@ -183,14 +183,14 @@ export default function FriendsModal({
                     <button
                       type="submit"
                       disabled={adding || shareIdInput.length < 6}
-                      className="flex items-center gap-1.5 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                      className="flex items-center justify-center p-3 sm:px-4 sm:py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-semibold transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                     >
                       {adding ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin sm:mr-1.5" />
                       ) : (
-                        <UserPlus className="w-4 h-4" />
+                        <UserPlus className="w-4 h-4 sm:mr-1.5" />
                       )}
-                      <span>{t.addFriend}</span>
+                      <span className="hidden sm:inline">{t.addFriend}</span>
                     </button>
                   </div>
                   {addError && (

@@ -797,36 +797,38 @@ export default function Home() {
       )}
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
-        
-        {/* Dynamic Scroll-to-Top Button */}
-        <button
-          onClick={scrollToTop}
-          className={`w-12 h-12 flex items-center justify-center rounded-full shadow-xl bg-zinc-800 border border-zinc-700/50 text-white transition-all duration-300 cursor-pointer ${
-            showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
-          aria-label="Başa Dön"
-          title="Scroll to Top"
-        >
-          <ArrowUp className="w-5 h-5" />
-        </button>
-
-        {/* Roulette Button */}
-        {watchlist.length > 0 && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setRouletteOpen(true)}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
-            title="Movie Roulette"
+      {!selectedMovie && (
+        <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
+          
+          {/* Dynamic Scroll-to-Top Button */}
+          <button
+            onClick={scrollToTop}
+            className={`w-12 h-12 flex items-center justify-center rounded-full shadow-xl bg-zinc-800 border border-zinc-700/50 text-white transition-all duration-300 cursor-pointer ${
+              showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+            }`}
+            aria-label="Başa Dön"
+            title="Scroll to Top"
           >
-            <Sparkles className="w-5 h-5" />
-          </motion.button>
-        )}
-      </div>
+            <ArrowUp className="w-5 h-5" />
+          </button>
+
+          {/* Roulette Button */}
+          {watchlist.length > 0 && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setRouletteOpen(true)}
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
+              title="Movie Roulette"
+            >
+              <Sparkles className="w-5 h-5" />
+            </motion.button>
+          )}
+        </div>
+      )}
 
       </div>
 
