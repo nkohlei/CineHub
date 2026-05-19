@@ -68,8 +68,7 @@ export default function MovieCard({
             src={posterUrl}
             alt={displayTitle}
             fill
-            priority={index < 4}
-            loading={index < 4 ? 'eager' : 'lazy'}
+            priority={index < 6}
             sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 20vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={() => setImgError(true)}

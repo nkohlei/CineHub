@@ -40,7 +40,6 @@ export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
-  const [displayCount, setDisplayCount] = useState(8);
   
   useEffect(() => {
     setMounted(true);
@@ -374,15 +373,7 @@ export default function Home() {
     });
   }, [baseDisplayed, sortBy]);
 
-  useEffect(() => {
-    setDisplayCount(8);
-    if (displayed && displayed.length > 8) {
-      const timer = setTimeout(() => {
-        setDisplayCount(displayed.length);
-      }, 500); // 500ms delay gives the CPU time to breathe
-      return () => clearTimeout(timer);
-    }
-  }, [displayed]);
+
 
   const handleMovieAdded = () => {
     setActiveTab("watchlist");
@@ -782,7 +773,7 @@ export default function Home() {
             layout={isMobile ? false : "position"}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
           >
-            {displayed.slice(0, Math.min(visibleCount, displayCount)).map((movie, index) => (
+            {displayed.slice(0, visibleCount).map((movie, index) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}
