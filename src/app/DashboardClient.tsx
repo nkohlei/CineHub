@@ -500,7 +500,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full">
+    <main className="flex-1 px-4 sm:px-10 md:px-12 py-4 sm:py-6 md:py-8 max-w-7xl mx-auto w-full">
       <div className={isAnyModalOpen ? "modal-open-prevent-scroll flex-1 flex flex-col" : "flex-1 flex flex-col"}>
       {/* Header */}
       <motion.header
@@ -509,9 +509,9 @@ export default function Home() {
         transition={{ duration: 0.6 }}
         className="mb-8"
       >
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4 mb-4 md:mb-6">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {/* Refactored Accessible Header */}
               <h1 className="flex items-center justify-start relative h-16 lg:h-20 min-w-[150px]">
                 {/* Important: Visually hidden text for SEO/Accessibility */}
@@ -557,7 +557,7 @@ export default function Home() {
                     navigator.clipboard.writeText((session?.user as any).shareId);
                     showToast(t.copied, "success");
                   }}
-                  className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 px-3 py-1.5 rounded-full text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md select-none font-mono hover:shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                  className="flex items-center gap-1 sm:gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-1.5 md:text-xs rounded-full font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer shadow-md select-none font-mono hover:shadow-[0_0_12px_rgba(168,85,247,0.15)]"
                   title="Click to copy your Share ID"
                 >
                   <span className="text-zinc-500 font-bold font-sans uppercase text-[10px] tracking-wider">{language === 'tr' ? 'Kod' : 'ID'}:</span>
@@ -603,10 +603,10 @@ export default function Home() {
           </div>
           
           {/* Red Zone: Friends Button & Search Bar */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => setFriendsModalOpen(true)}
-              className="relative p-2 md:p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
+              className="relative p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
               title={language === 'tr' ? "Arkadaşlar & Gelen Kutusu" : "Friends & Inbox"}
             >
               <Users className="w-5 h-5 text-purple-400" />
@@ -632,7 +632,7 @@ export default function Home() {
         />
         
         {/* Sleek Glassmorphism Control Panel */}
-        <div className="flex flex-wrap items-center gap-3 bg-zinc-900/40 p-1.5 rounded-2xl border border-zinc-800/60 backdrop-blur-md self-start md:self-auto w-full md:w-auto justify-between sm:justify-start">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2 md:gap-3 bg-zinc-900/40 p-1 md:p-1.5 rounded-2xl border border-zinc-800/60 backdrop-blur-md self-start md:self-auto w-full md:w-auto justify-between sm:justify-start">
           
           {/* Green Zone: List Management Controls */}
           {session?.user && (
@@ -640,7 +640,7 @@ export default function Home() {
               {/* Download List Button */}
               <button
                 onClick={handleDownloadList}
-                className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                className="flex items-center gap-1 md:gap-1.5 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-2 md:text-xs rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
                 title={t.downloadList}
               >
                 <ArrowUp className="w-3.5 h-3.5 text-emerald-400 rotate-180" />
@@ -651,7 +651,7 @@ export default function Home() {
               <div className="relative">
                 <button
                   onClick={() => setSendListPopoverOpen(!sendListPopoverOpen)}
-                  className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                  className="flex items-center gap-1 md:gap-1.5 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-2 md:text-xs rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
                   title={t.sendList}
                 >
                   <Send className="w-3.5 h-3.5 text-blue-400" />
@@ -705,7 +705,7 @@ export default function Home() {
           {/* IMDb Ratings Toggle Button */}
           <button
             onClick={() => setShowAllRatings(!showAllRatings)}
-            className={`flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold border transition-all duration-300 cursor-pointer ${
+            className={`flex items-center gap-1 md:gap-2 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3.5 md:py-2 md:text-xs rounded-lg md:rounded-xl font-semibold border transition-all duration-300 cursor-pointer ${
               showAllRatings
                 ? "bg-purple-500/20 border-purple-500/40 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
                 : "bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300"
@@ -725,7 +725,7 @@ export default function Home() {
             {/* Trigger Button */}
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-xl text-zinc-300 text-[11px] md:text-sm font-medium hover:bg-zinc-800/60 hover:text-white transition-all flex items-center gap-1 md:gap-2.5 shadow-lg shadow-black/20 cursor-pointer"
+              className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-4 md:py-2.5 md:text-sm rounded-lg md:rounded-xl text-zinc-300 font-medium hover:bg-zinc-800/60 hover:text-white transition-all flex items-center gap-1 md:gap-2.5 shadow-lg shadow-black/20 cursor-pointer"
             >
               <SlidersHorizontal className="w-4 h-4 text-zinc-400" />
               <span>
@@ -810,7 +810,7 @@ export default function Home() {
 
       {/* Movie Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="rounded-2xl overflow-hidden glass-card">
               <div className="aspect-[2/3] bg-zinc-900/30 animate-pulse rounded-xl" />
@@ -840,7 +840,7 @@ export default function Home() {
       ) : (
         <motion.div
           layout
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
         >
           {displayed.map((movie, index) => (
             <MovieCard
@@ -863,7 +863,7 @@ export default function Home() {
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setRouletteOpen(true)}
-          className="fixed z-[100] right-4 bottom-8 pb-[env(safe-area-inset-bottom)] md:right-8 md:bottom-8 flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
+          className="fixed z-[100] right-3 bottom-[12%] px-3 py-1.5 text-xs sm:right-6 sm:bottom-16 sm:px-4 sm:py-2 sm:text-sm md:right-8 md:bottom-8 md:px-6 md:py-3 md:text-lg lg:text-xl flex items-center gap-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
           title="Movie Roulette"
         >
           <Sparkles className="w-5 h-5" />

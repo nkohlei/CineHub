@@ -8,6 +8,12 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+export const viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "Oxynema — Kişisel Film Takip & Rulet Platformu",
   description: "Kişisel film arşivinizi oluşturun, izleme istatistiklerinizi analiz edin ve kararsız kaldığınız gecelerde film ruletinin sizin için en iyi seçimi yapmasına izin verin. Oxypace iştirakidir.",
