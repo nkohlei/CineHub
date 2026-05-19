@@ -837,27 +837,21 @@ export default function Home() {
       {/* Floating Action Buttons */}
       <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur-md border border-zinc-700 text-zinc-300 shadow-xl hover:bg-zinc-700/80 transition-all cursor-pointer"
-          title="Scroll to Top"
+      {/* Floating Action Buttons */}
+      {watchlist.length > 0 && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => setRouletteOpen(true)}
+          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer pb-[env(safe-area-inset-bottom)]"
+          title="Movie Roulette"
         >
-          <ArrowUp className="w-5 h-5" />
-        </button>
-        {watchlist.length > 0 && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setRouletteOpen(true)}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
-            title="Movie Roulette"
-          >
-            <Sparkles className="w-5 h-5" />
-          </motion.button>
-        )}
-      </div>
+          <Sparkles className="w-5 h-5" />
+        </motion.button>
+      )}
 
       </div>
 
@@ -930,22 +924,16 @@ export default function Home() {
       />
 
       {/* Scroll to Top Button */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            whileHover={{ scale: 1.1, translateY: -2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={scrollToTop}
-            className="fixed bottom-24 right-6 flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900/80 border border-zinc-700/50 backdrop-blur-xl text-zinc-300 hover:text-white shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:border-purple-500/30 transition-colors cursor-pointer z-40"
-            title="Scroll to Top"
-          >
-            <ArrowUp className="w-5 h-5" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <button
+        onClick={scrollToTop}
+        className={`fixed z-[100] right-4 md:right-8 w-12 h-12 flex items-center justify-center rounded-full shadow-xl bg-zinc-800 border border-zinc-700/50 text-white transition-all duration-300 cursor-pointer pb-[env(safe-area-inset-bottom)] bottom-[4.5rem] md:bottom-[5.5rem] ${
+          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+        aria-label="Başa Dön"
+        title="Scroll to Top"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
       <Footer />
     </main>
   );
