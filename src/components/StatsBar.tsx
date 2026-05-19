@@ -42,23 +42,23 @@ export default function StatsBar({ total, watched }: StatsBarProps) {
 
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6 p-3 md:p-6 rounded-2xl glass items-stretch">
+    <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-6 p-2 md:p-4 rounded-2xl glass items-stretch">
       {stats.map((stat) => (
-        <div key={stat.label} className="flex items-center gap-3 bg-zinc-900/25 p-3 rounded-xl border border-zinc-800/40">
-          <div className={`p-2 rounded-lg bg-zinc-800/40 ${stat.iconColor} shrink-0`}>
-            <stat.Icon className="w-4.5 h-4.5" />
+        <div key={stat.label} className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 bg-zinc-900/25 p-1.5 sm:p-2 md:p-4 rounded-xl border border-zinc-800/40 text-center sm:text-left">
+          <div className={`p-1 md:p-2 rounded-lg bg-zinc-800/40 ${stat.iconColor} shrink-0`}>
+            <stat.Icon className="w-3 h-3 md:w-5 md:h-5" />
           </div>
-          <div className="min-w-0">
-            <div className={`text-xl md:text-4xl font-bold tabular-nums truncate ${stat.color}`}>
+          <div className="min-w-0 flex flex-col justify-center">
+            <div className={`text-sm sm:text-base md:text-3xl font-bold tabular-nums truncate ${stat.color}`}>
               <AnimatedNumber value={stat.value} />
             </div>
-            <div className="text-[10px] md:text-sm text-zinc-500 font-medium truncate">{stat.label}</div>
+            <div className="text-[9px] sm:text-[10px] md:text-sm text-zinc-500 font-medium truncate leading-tight">{stat.label}</div>
           </div>
         </div>
       ))}
 
       {/* Progress bar */}
-      <div className="col-span-2 md:col-span-1 bg-zinc-900/25 p-3 rounded-xl border border-zinc-800/40 flex flex-col justify-center min-h-[56px]">
+      <div className="col-span-3 md:col-span-1 bg-zinc-900/25 p-2 md:p-4 rounded-xl border border-zinc-800/40 flex flex-col justify-center min-h-[40px] md:min-h-[56px]">
         <div className="flex justify-between text-[10px] md:text-sm text-zinc-500 mt-3 mb-1 md:mt-6 md:mb-2 font-medium">
           <span>Progress</span>
           <span className="text-purple-400">{Math.round(progress)}%</span>

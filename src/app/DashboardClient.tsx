@@ -253,20 +253,6 @@ export default function Home() {
     return false;
   };
 
-  const handleDownloadList = () => {
-    if (movies.length === 0) {
-      showToast(language === 'tr' ? "Listeniz boş!" : "Your list is empty!", "error");
-      return;
-    }
-    const dataStr = JSON.stringify(movies, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `oxynema_watchlist_${new Date().toISOString().split('T')[0]}.json`;
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    showToast(language === 'tr' ? "Liste başarıyla indirildi!" : "List downloaded successfully!", "success");
-  };
 
   const handleSendListToFriend = async (friend: { id: string; name: string }) => {
     if (movies.length === 0) {
@@ -513,7 +499,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {/* Refactored Accessible Header */}
-              <h1 className="flex items-center justify-start relative h-8 sm:h-12 md:h-16 lg:h-20 min-w-[100px] md:min-w-[150px]">
+              <h1 className="flex items-center justify-start relative h-10 sm:h-12 md:h-16 lg:h-20 min-w-[100px] md:min-w-[150px]">
                 {/* Important: Visually hidden text for SEO/Accessibility */}
                 <span className="sr-only">Oxynema - Kişisel Film Takip ve Rulet Platformu</span>
                 
@@ -523,7 +509,7 @@ export default function Home() {
                   alt="Oxynema - Premium el yazısı gümüş logo imza" 
                   height={72} // Sets height to approximate current font height (72px ~ 4xl-5xl)
                   priority // Critical: Loads with high priority for immediate display
-                  className="absolute left-0 h-8 sm:h-12 md:h-16 lg:h-20 w-auto" // Maintains aspect ratio, responsive sizing
+                  className="absolute left-0 h-10 sm:h-12 md:h-16 lg:h-20 w-auto" // Maintains aspect ratio, responsive sizing
                 />
               </h1>
               {session?.user && (
@@ -605,20 +591,22 @@ export default function Home() {
           </div>
           
           {/* Red Zone: Friends Button & Search Bar */}
-          <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-end">
+          <div className="flex w-full sm:w-auto items-stretch gap-2 justify-end">
+            <div className="order-1 md:order-2 flex-grow sm:flex-grow-0 flex items-center">
+              <GlobalSearch onMovieAdded={handleMovieAdded} />
+            </div>
             <button
               onClick={() => setFriendsModalOpen(true)}
-              className="relative p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
+              className="order-2 md:order-1 relative aspect-square flex items-center justify-center h-10 md:h-[46px] rounded-xl sm:rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
               title={language === 'tr' ? "Arkadaşlar & Gelen Kutusu" : "Friends & Inbox"}
             >
-              <Users className="w-5 h-5 text-purple-400" />
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
               {inbox.length > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-zinc-950 animate-pulse">
                   {inbox.length}
                 </span>
               )}
             </button>
-            <GlobalSearch onMovieAdded={handleMovieAdded} />
           </div>
         </div>
         <StatsBar total={movies.length} watched={watched.length} />
@@ -639,16 +627,6 @@ export default function Home() {
           {/* Green Zone: List Management Controls */}
           {session?.user && (
             <div className="flex items-center gap-2">
-              {/* Download List Button */}
-              <button
-                onClick={handleDownloadList}
-                className="flex items-center gap-1 md:gap-1.5 px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs md:px-3 md:py-2 md:text-xs rounded-lg md:rounded-xl font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
-                title={t.downloadList}
-              >
-                <ArrowUp className="w-3.5 h-3.5 text-emerald-400 rotate-180" />
-                <span className="hidden lg:inline">{t.downloadList}</span>
-              </button>
-
               {/* Send List Button & Popover */}
               <div className="relative">
                 <button
@@ -856,22 +834,30 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Floating Roulette Button */}
-      {watchlist.length > 0 && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          onClick={() => setRouletteOpen(true)}
-          className="fixed z-[100] right-3 bottom-[12%] px-3 py-1.5 text-xs sm:right-6 sm:bottom-16 sm:px-4 sm:py-2 sm:text-sm md:right-8 md:bottom-8 md:px-6 md:py-3 md:text-lg lg:text-xl flex items-center gap-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
-          title="Movie Roulette"
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-800/80 backdrop-blur-md border border-zinc-700 text-zinc-300 shadow-xl hover:bg-zinc-700/80 transition-all cursor-pointer"
+          title="Scroll to Top"
         >
-          <Sparkles className="w-5 h-5" />
-          <span className="hidden sm:inline">Spin</span>
-        </motion.button>
-      )}
+          <ArrowUp className="w-5 h-5" />
+        </button>
+        {watchlist.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setRouletteOpen(true)}
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
+            title="Movie Roulette"
+          >
+            <Sparkles className="w-5 h-5" />
+          </motion.button>
+        )}
+      </div>
 
       </div>
 
