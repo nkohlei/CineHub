@@ -3,9 +3,15 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { MovieRecord, CastMember } from "@/lib/types";
-import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react";
+import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
+
+const YouTubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.524 3.545 12 3.545 12 3.545s-7.525 0-9.388.51a3.003 3.003 0 0 0-2.11 2.108C0 8.029 0 12 0 12s0 3.97.502 5.837a3.003 3.003 0 0 0 2.11 2.108c1.863.51 9.388.51 9.388.51s7.524 0 9.388-.51a3.003 3.003 0 0 0 2.11-2.108C24 15.97 24 12 24 12s0-3.971-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
 
 interface DetailModalProps {
   movie: MovieRecord | null;
@@ -23,6 +29,7 @@ interface FullDetails {
   overview: string;
   rating: number;
   trailerKey: string | null;
+  videos: { key: string; name: string; type: string }[];
   year: string;
   runtime: number;
   genres: string[];
@@ -42,6 +49,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const [loading, setLoading] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [activeVideoKey, setActiveVideoKey] = useState<string | null>(null);
 
   const [activeTmdbId, setActiveTmdbId] = useState<number | null>(null);
   const [activeTitle, setActiveTitle] = useState("");
@@ -152,12 +160,23 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
       setLoading(true);
       setShowTrailer(false);
       setDetails(null); // Wipe old details instantly to prevent stale UI data
+      setActiveVideoKey(null);
       fetch(`/api/tmdb/${activeTmdbId}?language=${language}`)
         .then((res) => res.json())
-        .then((data) => { setDetails(data); setLoading(false); })
+        .then((data) => { 
+          setDetails(data); 
+          setLoading(false); 
+          if (data && data.videos && data.videos.length > 0) {
+            const defaultVideo = data.videos.find((v: any) => v.type === "Trailer") || data.videos[0];
+            setActiveVideoKey(defaultVideo?.key || data.trailerKey || null);
+          } else {
+            setActiveVideoKey(data?.trailerKey || null);
+          }
+        })
         .catch(() => setLoading(false));
     } else {
       setDetails(null);
+      setActiveVideoKey(null);
     }
   }, [activeTmdbId, language]);
 
@@ -275,7 +294,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
               <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden rounded-none md:rounded-t-2xl">
                 <Image src={details?.backdropUrl || ('https://image.tmdb.org/t/p/original' + movie.backdropPath)} alt={activeTitle} fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#08080e] via-[#08080e]/60 to-transparent" />
-                {(details?.trailerKey || movie.trailerKey) && (
+                {(activeVideoKey || details?.trailerKey || movie.trailerKey) && (
                   <button
                     onClick={() => setShowTrailer(true)}
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/15 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer group"
@@ -288,15 +307,53 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
             {/* Trailer embed */}
             <AnimatePresence>
-              {showTrailer && (details?.trailerKey || movie?.trailerKey) && (
+              {showTrailer && (activeVideoKey || details?.trailerKey || movie?.trailerKey) && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="relative w-full aspect-video rounded-t-lg border-b border-zinc-800">
                     <iframe
-                      src={`https://www.youtube.com/embed/${details?.trailerKey || movie.trailerKey}?autoplay=1&rel=0`}
+                      src={`https://www.youtube.com/embed/${activeVideoKey || details?.trailerKey || movie.trailerKey}?autoplay=1&rel=0`}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       className="absolute inset-0 w-full h-full"
                     />
+                  </div>
+                  {/* Alternative Videos & Fallback Button Container */}
+                  <div className="px-4 py-3 bg-zinc-950/60 border-b border-zinc-800/80 flex flex-col gap-2.5">
+                    {/* Alternative video list pills */}
+                    {details && details.videos && details.videos.length > 1 && (
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mr-1">
+                          {language === "tr" ? "Diğer Videolar:" : "Alternative Videos:"}
+                        </span>
+                        {details.videos.map((vid) => (
+                          <button
+                            key={vid.key}
+                            onClick={() => setActiveVideoKey(vid.key)}
+                            className={`px-2.5 py-1 text-xs rounded-full border transition-all cursor-pointer ${
+                              (activeVideoKey || details.trailerKey) === vid.key
+                                ? "bg-purple-600 border-purple-500 text-white font-semibold"
+                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                            }`}
+                          >
+                            {vid.name.length > 25 ? `${vid.name.substring(0, 25)}...` : vid.name} ({vid.type})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* External Escape Hatch */}
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <a 
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(activeTitle + ' trailer')}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-red-600/20 border border-zinc-800 hover:border-red-500/30 text-zinc-300 hover:text-red-400 text-xs rounded-lg transition-all cursor-pointer font-medium"
+                      >
+                        <YouTubeIcon className="w-4 h-4 text-red-500" />
+                        <span>{language === "tr" ? "Fragman Açılmıyorsa YouTube'da Ara" : "Search YouTube if Video Doesn't Play"}</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
+                      </a>
+                    </div>
                   </div>
                 </motion.div>
               )}

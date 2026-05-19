@@ -43,10 +43,31 @@ export async function getMovieDetails(tmdbId: number, lang: string = "en") {
   if (!res.ok) throw new Error(`TMDB details failed: ${res.status}`);
   const data = await res.json();
 
-  // Extract YouTube trailer
-  const trailer = data.videos?.results?.find(
-    (v: { site: string; type: string }) => v.site === "YouTube" && v.type === "Trailer"
+  // Localized videos list
+  let videosList = data.videos?.results || [];
+
+  // Fallback to en-US videos if localized list is empty
+  if (videosList.length === 0 && languageParam !== "en-US") {
+    try {
+      const fallbackRes = await fetch(
+        `${TMDB_BASE_URL}/movie/${tmdbId}/videos?api_key=${getApiKey()}&language=en-US`
+      );
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json();
+        videosList = fallbackData.results || [];
+      }
+    } catch (e) {
+      console.warn(`Failed to fetch fallback en-US videos for tmdbId ${tmdbId}:`, e);
+    }
+  }
+
+  // Filter YouTube trailers and teasers
+  const allowedVideos = videosList.filter(
+    (v: { site: string; type: string; key: string; name: string }) =>
+      v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
   );
+
+  const trailer = allowedVideos.find((v: any) => v.type === "Trailer") || allowedVideos[0];
 
   // Extract top 6 cast members
   const cast = (data.credits?.cast || []).slice(0, 6).map(
@@ -68,6 +89,11 @@ export async function getMovieDetails(tmdbId: number, lang: string = "en") {
     release_date: data.release_date,
     runtime: data.runtime,
     genres: data.genres || [],
+    videos: allowedVideos.map((v: any) => ({
+      key: v.key,
+      name: v.name,
+      type: v.type,
+    })),
     trailerKey: trailer?.key || null,
     cast,
     imdb_id: data.imdb_id || null,

@@ -81,6 +81,7 @@ export async function GET(
         overview: details.overview,
         rating: Math.round(details.vote_average * 10) / 10,
         trailerKey: details.trailerKey,
+        videos: details.videos || [],
         year: details.release_date?.split("-")[0] || "",
         runtime: details.runtime,
         genres: details.genres.map((g: { name: string }) => g.name),
@@ -108,6 +109,7 @@ export async function GET(
       overview: fallback.overview,
       rating: fallback.rating,
       trailerKey: null,
+      videos: [],
       year: fallback.year,
       runtime: fallback.runtime,
       genres: fallback.genres,
@@ -120,6 +122,6 @@ export async function GET(
   // No fallback available for this ID
   return NextResponse.json({
     posterUrl: null, backdropUrl: null, overview: "", rating: 0,
-    trailerKey: null, year: "", runtime: 0, genres: [], cast: [],
+    trailerKey: null, videos: [], year: "", runtime: 0, genres: [], cast: [],
   });
 }
