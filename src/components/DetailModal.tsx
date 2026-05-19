@@ -331,7 +331,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                   {!movie?.isWatched && activeTmdbId === movie?.tmdbId && onOpenEvaluation && (
                     <button
                       onClick={() => onOpenEvaluation(movie)}
-                      className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
+                      className="flex items-center gap-1 md:gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
                     >
                       <Eye className="w-4 h-4 text-purple-400" />
                       <span>{t.watchedShortcut}</span>
@@ -343,7 +343,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     <div className="relative">
                       <button
                         onClick={() => setSharePopoverOpen(!sharePopoverOpen)}
-                        className="flex items-center gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
+                        className="flex items-center gap-1 md:gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
                       >
                         <Send className="w-4 h-4 text-emerald-400" />
                         <span>{t.share}</span>
@@ -520,13 +520,13 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                             onDelete(movie.id);
                             onClose();
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/35 text-red-400 text-xs font-semibold hover:bg-red-500/35 transition-all cursor-pointer"
+                          className="px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg bg-red-500/20 border border-red-500/35 text-red-400 text-[11px] md:text-xs font-semibold hover:bg-red-500/35 transition-all cursor-pointer"
                         >
                           {t.confirm}
                         </button>
                         <button
                           onClick={() => setConfirmDelete(false)}
-                          className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700/50 text-zinc-400 text-xs font-semibold hover:bg-zinc-700/50 transition-all cursor-pointer"
+                          className="px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg bg-zinc-800 border border-zinc-700/50 text-zinc-400 text-[11px] md:text-xs font-semibold hover:bg-zinc-700/50 transition-all cursor-pointer"
                         >
                           {t.cancel}
                         </button>
@@ -534,7 +534,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     ) : (
                       <button
                         onClick={() => setConfirmDelete(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10 text-red-400/80 text-xs font-medium hover:bg-red-500/15 transition-all cursor-pointer"
+                        className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg bg-red-500/5 border border-red-500/10 text-red-400/80 text-[11px] md:text-xs font-medium hover:bg-red-500/15 transition-all cursor-pointer"
                       >
                         <Trash className="w-3.5 h-3.5" />
                         {t.deleteMovie}

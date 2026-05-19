@@ -66,7 +66,8 @@ export default function MovieCard({
             src={posterUrl}
             alt={displayTitle}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            priority={index < 4}
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 15vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={() => setImgError(true)}
           />

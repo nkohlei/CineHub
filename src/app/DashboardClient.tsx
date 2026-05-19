@@ -572,7 +572,7 @@ export default function Home() {
               <button
                 disabled={syncing || syncingAll}
                 onClick={handleForceSync}
-                className="px-3.5 py-1.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-xs font-semibold text-purple-300 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1.5 md:px-3.5 md:py-1.5 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-[11px] md:text-xs font-semibold text-purple-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
               >
                 {syncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
@@ -585,7 +585,7 @@ export default function Home() {
               <button
                 disabled={syncing || syncingAll}
                 onClick={handleSyncAll}
-                className="px-3.5 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-xs font-semibold text-emerald-300 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1.5 md:px-3.5 md:py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 disabled:bg-zinc-800/40 disabled:border-zinc-700/30 disabled:text-zinc-500 text-[11px] md:text-xs font-semibold text-emerald-300 transition-all cursor-pointer flex items-center gap-1 md:gap-1.5"
               >
                 {syncingAll ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
@@ -606,7 +606,7 @@ export default function Home() {
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
               onClick={() => setFriendsModalOpen(true)}
-              className="relative p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
+              className="relative p-2 md:p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-purple-500/30 transition-all text-zinc-400 hover:text-white cursor-pointer shadow-lg hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] flex-shrink-0"
               title={language === 'tr' ? "Arkadaşlar & Gelen Kutusu" : "Friends & Inbox"}
             >
               <Users className="w-5 h-5 text-purple-400" />
@@ -640,7 +640,7 @@ export default function Home() {
               {/* Download List Button */}
               <button
                 onClick={handleDownloadList}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
                 title={t.downloadList}
               >
                 <ArrowUp className="w-3.5 h-3.5 text-emerald-400 rotate-180" />
@@ -651,7 +651,7 @@ export default function Home() {
               <div className="relative">
                 <button
                   onClick={() => setSendListPopoverOpen(!sendListPopoverOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
+                  className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold bg-zinc-800/30 border border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300 transition-all cursor-pointer select-none"
                   title={t.sendList}
                 >
                   <Send className="w-3.5 h-3.5 text-blue-400" />
@@ -705,7 +705,7 @@ export default function Home() {
           {/* IMDb Ratings Toggle Button */}
           <button
             onClick={() => setShowAllRatings(!showAllRatings)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-300 cursor-pointer ${
+            className={`flex items-center gap-1 md:gap-2 px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-semibold border transition-all duration-300 cursor-pointer ${
               showAllRatings
                 ? "bg-purple-500/20 border-purple-500/40 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
                 : "bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-300"
@@ -725,7 +725,7 @@ export default function Home() {
             {/* Trigger Button */}
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 px-4 py-2.5 rounded-xl text-zinc-300 text-sm font-medium hover:bg-zinc-800/60 hover:text-white transition-all flex items-center gap-2.5 shadow-lg shadow-black/20 cursor-pointer"
+              className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-xl text-zinc-300 text-[11px] md:text-sm font-medium hover:bg-zinc-800/60 hover:text-white transition-all flex items-center gap-1 md:gap-2.5 shadow-lg shadow-black/20 cursor-pointer"
             >
               <SlidersHorizontal className="w-4 h-4 text-zinc-400" />
               <span>
@@ -863,7 +863,7 @@ export default function Home() {
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setRouletteOpen(true)}
-          className="fixed bottom-6 right-6 flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer z-40"
+          className="fixed z-[100] right-4 bottom-8 pb-[env(safe-area-inset-bottom)] md:right-8 md:bottom-8 flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-shadow animate-float cursor-pointer"
           title="Movie Roulette"
         >
           <Sparkles className="w-5 h-5" />
