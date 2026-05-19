@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieRecord } from "@/lib/types";
 import { Sparkles, Film, CheckCircle2, Loader2, ArrowUp, Eye, EyeOff, SlidersHorizontal, ChevronDown, Check, Send, Users } from "lucide-react";
@@ -40,6 +40,7 @@ export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
+  const [displayCount, setDisplayCount] = useState(8);
   
   useEffect(() => {
     setMounted(true);
@@ -347,29 +348,41 @@ export default function Home() {
     }
   }, [fetchMovies, fetchSocialProfile, session]);
 
-  const watchlist = movies.filter((m) => !m.isWatched);
-  const watched = movies.filter((m) => m.isWatched).sort(
+  const watchlist = useMemo(() => movies.filter((m) => !m.isWatched), [movies]);
+  const watched = useMemo(() => movies.filter((m) => m.isWatched).sort(
     (a, b) => new Date(b.watchedAt || 0).getTime() - new Date(a.watchedAt || 0).getTime()
-  );
+  ), [movies]);
   const baseDisplayed = activeTab === "watchlist" ? watchlist : watched;
 
-  const displayed = [...baseDisplayed].sort((a, b) => {
-    if (sortBy === "imdb") {
-      const aRating = parseFloat(a.imdbRating?.replace("ERR: ", "") || "0");
-      const bRating = parseFloat(b.imdbRating?.replace("ERR: ", "") || "0");
-      const aVal = isNaN(aRating) ? -1 : aRating;
-      const bVal = isNaN(bRating) ? -1 : bRating;
-      return bVal - aVal;
+  const displayed = useMemo(() => {
+    return [...baseDisplayed].sort((a, b) => {
+      if (sortBy === "imdb") {
+        const aRating = parseFloat(a.imdbRating?.replace("ERR: ", "") || "0");
+        const bRating = parseFloat(b.imdbRating?.replace("ERR: ", "") || "0");
+        const aVal = isNaN(aRating) ? -1 : aRating;
+        const bVal = isNaN(bRating) ? -1 : bRating;
+        return bVal - aVal;
+      }
+      if (sortBy === "releaseDate") {
+        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+        const validA = isNaN(dateA) ? 0 : dateA;
+        const validB = isNaN(dateB) ? 0 : dateB;
+        return validB - validA;
+      }
+      return 0;
+    });
+  }, [baseDisplayed, sortBy]);
+
+  useEffect(() => {
+    setDisplayCount(8);
+    if (displayed && displayed.length > 8) {
+      const timer = setTimeout(() => {
+        setDisplayCount(displayed.length);
+      }, 500); // 500ms delay gives the CPU time to breathe
+      return () => clearTimeout(timer);
     }
-    if (sortBy === "releaseDate") {
-      const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-      const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-      const validA = isNaN(dateA) ? 0 : dateA;
-      const validB = isNaN(dateB) ? 0 : dateB;
-      return validB - validA;
-    }
-    return 0;
-  });
+  }, [displayed]);
 
   const handleMovieAdded = () => {
     setActiveTab("watchlist");
@@ -769,7 +782,7 @@ export default function Home() {
             layout={isMobile ? false : "position"}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6"
           >
-            {displayed.slice(0, visibleCount).map((movie, index) => (
+            {displayed.slice(0, Math.min(visibleCount, displayCount)).map((movie, index) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}

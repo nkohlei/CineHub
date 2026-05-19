@@ -48,7 +48,7 @@ export default function MovieCard({
   };
 
   const posterUrl = movie.posterPath && !imgError 
-    ? 'https://image.tmdb.org/t/p/w500' + movie.posterPath 
+    ? 'https://image.tmdb.org/t/p/w342' + movie.posterPath 
     : null;
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
@@ -69,6 +69,7 @@ export default function MovieCard({
             alt={displayTitle}
             fill
             priority={index < 4}
+            loading={index < 4 ? 'eager' : 'lazy'}
             sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 20vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={() => setImgError(true)}
