@@ -171,65 +171,66 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
           const rawVideos = data?.videos || [];
 
-          // 2. HARD FILTER: Absolute studio verification and YouTube source only
-          const strictlyOfficial = rawVideos.filter(
-            (v: any) => v.official === true && v.site === 'YouTube'
-          );
+          // 2. HARD FILTER: Only YouTube. Do NOT filter out official === false anymore!
+          const youtubeVideos = rawVideos.filter((v: any) => v.site === 'YouTube');
 
-          // 3. SCORE ENGINE: Rank videos by dynamic metadata priority
-          const scoredVideos = strictlyOfficial.map((v: any) => {
+          // 3. SMART SCORE ENGINE: Rank videos by dynamic metadata priority
+          const scoredVideos = youtubeVideos.map((v: any) => {
             let score = 0;
             
-            // Prioritize type
+            // Prioritize type (Trailer > Teaser > Clip)
             if (v.type === 'Trailer') score += 100;
             else if (v.type === 'Teaser') score += 50;
-            else if (v.type === 'Clip') score += 20;
+            else if (v.type === 'Clip') score += 10;
 
-            // Prioritize region/language for localized availability overrides
-            if (v.iso_639_1 === 'tr') score += 10;
-            else if (v.iso_639_1 === 'en') score += 5;
+            // Bonus for Official (but not mandatory)
+            if (v.official) score += 30; 
+
+            // Bonus for Region/Language (Prioritize TR, then EN)
+            if (v.iso_639_1 === 'tr') score += 20;
+            else if (v.iso_639_1 === 'en') score += 10;
 
             return { ...v, score };
           });
 
           // Sort from highest score to lowest
-          const sortedOfficial = scoredVideos.sort((a: any, b: any) => b.score - a.score);
+          const sortedVideos = scoredVideos.sort((a: any, b: any) => b.score - a.score);
 
-          // Filter out duplicate YouTube keys just in case
-          const uniqueOfficial: any[] = [];
+          // Filter out duplicate YouTube keys
+          const uniqueVideos: any[] = [];
           const seenKeys = new Set();
-          for (const video of sortedOfficial) {
+          for (const video of sortedVideos) {
             if (!seenKeys.has(video.key)) {
               seenKeys.add(video.key);
-              uniqueOfficial.push(video);
+              uniqueVideos.push(video);
             }
           }
 
           // 4. ABSOLUTE MANDATORY 2 SLOTS ENFORCEMENT
           let finalVideos: any[] = [];
 
-          if (uniqueOfficial.length >= 2) {
-            // Scenario A: We have plenty of official content, take the top 2
-            finalVideos = uniqueOfficial.slice(0, 2);
-          } else if (uniqueOfficial.length === 1) {
-            // Scenario B: TMDB only has 1 official video. Duplicate it to fulfill the "mandatory 2 buttons" rule
-            // This acts as a backup player state if one stream encounters a regional lock
+          if (uniqueVideos.length >= 2) {
+            // Scenario A: We have at least 2 videos (official or not). Take the top 2.
+            finalVideos = uniqueVideos.slice(0, 2);
+          } else if (uniqueVideos.length === 1) {
+            // Scenario B: TMDB only has exactly 1 video. 
+            // Fulfill the mandatory 2-button rule by adding a direct Search fallback as the 2nd option.
             finalVideos = [
-              uniqueOfficial[0], 
-              { ...uniqueOfficial[0], name: `${uniqueOfficial[0].name} (Alternatif)` }
+              uniqueVideos[0], 
+              { key: 'SEARCH_ALT', name: 'Alternatif Ara (YouTube)', isFallback: true }
             ];
           } else {
-            // Scenario C: Absolute zero videos found (Rare). Create 2 clean hardcoded fallback search states
+            // Scenario C: Absolute zero videos found. Create 2 clean fallback search states.
             finalVideos = [
-              { key: 'SEARCH_TR', name: 'Resmi Fragman (TR)', isFallback: true },
-              { key: 'SEARCH_EN', name: 'Official Trailer (EN)', isFallback: true }
+              { key: 'SEARCH_TR', name: 'Fragman Ara (TR)', isFallback: true },
+              { key: 'SEARCH_EN', name: 'Trailer Search (EN)', isFallback: true }
             ];
           }
 
           // Update component states
           setVideos(finalVideos);
           if (finalVideos[0]?.isFallback) {
-            setActiveVideoKey(null); // No iframe, force fallback text/button state
+            setActiveVideoKey(null); // No iframe, show fallback UI
           } else {
             setActiveVideoKey(finalVideos[0]?.key);
           }
@@ -318,6 +319,10 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
     castList = details.cast;
   }
 
+  const isTurkishSearch = !activeVideoKey 
+    || activeVideoKey === 'SEARCH_TR' 
+    || (activeVideoKey === 'SEARCH_ALT' && language === 'tr');
+
   return (
     <AnimatePresence>
       {movie && (
@@ -388,11 +393,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                         </p>
                         <a 
                           href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
-                            activeTitle + ' ' + (
-                              (!activeVideoKey || videos.find(v => v.key === activeVideoKey)?.key === 'SEARCH_TR')
-                                ? 'resmi fragman'
-                                : 'official trailer'
-                            )
+                            activeTitle + ' ' + (isTurkishSearch ? 'resmi fragman' : 'official trailer')
                           )}`}
                           target="_blank" 
                           rel="noopener noreferrer"
@@ -400,7 +401,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                         >
                           <YouTubeIcon className="w-4 h-4 text-white" />
                           <span>
-                            {(!activeVideoKey || videos.find(v => v.key === activeVideoKey)?.key === 'SEARCH_TR')
+                            {isTurkishSearch
                               ? (language === 'tr' ? "YouTube'da Ara (Türkçe)" : "Search YouTube (Turkish)")
                               : (language === 'tr' ? "YouTube'da Ara (İngilizce)" : "Search YouTube (English)")}
                           </span>
