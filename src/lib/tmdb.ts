@@ -46,25 +46,28 @@ export async function getMovieDetails(tmdbId: number, lang: string = "en") {
   // Localized videos list
   let videosList = data.videos?.results || [];
 
-  // Fallback to en-US videos if localized list is empty
-  if (videosList.length === 0 && languageParam !== "en-US") {
+  // Always fetch English videos and merge them if localized language is not en-US,
+  // to ensure we have maximum options for official trailers.
+  if (languageParam !== "en-US") {
     try {
       const fallbackRes = await fetch(
         `${TMDB_BASE_URL}/movie/${tmdbId}/videos?api_key=${getApiKey()}&language=en-US`
       );
       if (fallbackRes.ok) {
         const fallbackData = await fallbackRes.json();
-        videosList = fallbackData.results || [];
+        const fallbackVideos = fallbackData.results || [];
+        // Combine them
+        videosList = [...videosList, ...fallbackVideos];
       }
     } catch (e) {
       console.warn(`Failed to fetch fallback en-US videos for tmdbId ${tmdbId}:`, e);
     }
   }
 
-  // Filter YouTube trailers and teasers
+  // Filter YouTube trailers, teasers, and clips
   const allowedVideos = videosList.filter(
     (v: { site: string; type: string; key: string; name: string }) =>
-      v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+      v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser" || v.type === "Clip")
   );
 
   const trailer = allowedVideos.find((v: any) => v.type === "Trailer") || allowedVideos[0];

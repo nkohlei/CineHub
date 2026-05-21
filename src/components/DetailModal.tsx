@@ -29,7 +29,7 @@ interface FullDetails {
   overview: string;
   rating: number;
   trailerKey: string | null;
-  videos: { key: string; name: string; type: string; official?: boolean; site?: string; iso_639_1?: string }[];
+  videos: { key: string; name: string; type?: string; official?: boolean; site?: string; iso_639_1?: string; isFallback?: boolean }[];
   year: string;
   runtime: number;
   genres: string[];
@@ -50,7 +50,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const [showTrailer, setShowTrailer] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeVideoKey, setActiveVideoKey] = useState<string | null>(null);
-  const [videos, setVideos] = useState<{ key: string; name: string; type: string; official?: boolean; site?: string; iso_639_1?: string }[]>([]);
+  const [videos, setVideos] = useState<{ key: string; name: string; type?: string; official?: boolean; site?: string; iso_639_1?: string; isFallback?: boolean }[]>([]);
 
   const [activeTmdbId, setActiveTmdbId] = useState<number | null>(null);
   const [activeTitle, setActiveTitle] = useState("");
@@ -169,19 +169,70 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
           setDetails(data); 
           setLoading(false); 
 
-          // Assuming `rawVideos` is the array from TMDB /movie/{id}/videos
           const rawVideos = data?.videos || [];
-          const officialTrailers = rawVideos.filter((v: any) => v.official && v.site === 'YouTube' && v.type === 'Trailer');
-          
-          // Try to find a local one first, then a global one
-          const localTrailer = officialTrailers.find((v: any) => v.iso_639_1 === 'tr') || officialTrailers[0];
-          const globalTrailer = officialTrailers.find((v: any) => v.iso_639_1 === 'en' && v.key !== localTrailer?.key);
 
-          // Combine and limit to strictly 2 videos max
-          const finalVideos = [localTrailer, globalTrailer].filter(Boolean).slice(0, 2);
-          
+          // 2. HARD FILTER: Absolute studio verification and YouTube source only
+          const strictlyOfficial = rawVideos.filter(
+            (v: any) => v.official === true && v.site === 'YouTube'
+          );
+
+          // 3. SCORE ENGINE: Rank videos by dynamic metadata priority
+          const scoredVideos = strictlyOfficial.map((v: any) => {
+            let score = 0;
+            
+            // Prioritize type
+            if (v.type === 'Trailer') score += 100;
+            else if (v.type === 'Teaser') score += 50;
+            else if (v.type === 'Clip') score += 20;
+
+            // Prioritize region/language for localized availability overrides
+            if (v.iso_639_1 === 'tr') score += 10;
+            else if (v.iso_639_1 === 'en') score += 5;
+
+            return { ...v, score };
+          });
+
+          // Sort from highest score to lowest
+          const sortedOfficial = scoredVideos.sort((a: any, b: any) => b.score - a.score);
+
+          // Filter out duplicate YouTube keys just in case
+          const uniqueOfficial: any[] = [];
+          const seenKeys = new Set();
+          for (const video of sortedOfficial) {
+            if (!seenKeys.has(video.key)) {
+              seenKeys.add(video.key);
+              uniqueOfficial.push(video);
+            }
+          }
+
+          // 4. ABSOLUTE MANDATORY 2 SLOTS ENFORCEMENT
+          let finalVideos: any[] = [];
+
+          if (uniqueOfficial.length >= 2) {
+            // Scenario A: We have plenty of official content, take the top 2
+            finalVideos = uniqueOfficial.slice(0, 2);
+          } else if (uniqueOfficial.length === 1) {
+            // Scenario B: TMDB only has 1 official video. Duplicate it to fulfill the "mandatory 2 buttons" rule
+            // This acts as a backup player state if one stream encounters a regional lock
+            finalVideos = [
+              uniqueOfficial[0], 
+              { ...uniqueOfficial[0], name: `${uniqueOfficial[0].name} (Alternatif)` }
+            ];
+          } else {
+            // Scenario C: Absolute zero videos found (Rare). Create 2 clean hardcoded fallback search states
+            finalVideos = [
+              { key: 'SEARCH_TR', name: 'Resmi Fragman (TR)', isFallback: true },
+              { key: 'SEARCH_EN', name: 'Official Trailer (EN)', isFallback: true }
+            ];
+          }
+
+          // Update component states
           setVideos(finalVideos);
-          setActiveVideoKey(finalVideos[0]?.key || null);
+          if (finalVideos[0]?.isFallback) {
+            setActiveVideoKey(null); // No iframe, force fallback text/button state
+          } else {
+            setActiveVideoKey(finalVideos[0]?.key);
+          }
         })
         .catch(() => setLoading(false));
     } else {
@@ -320,37 +371,78 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
             {/* Trailer embed */}
             <AnimatePresence>
-              {showTrailer && (activeVideoKey || details?.trailerKey || movie?.trailerKey) && (
+              {showTrailer && videos.length > 0 && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="relative w-full aspect-video rounded-t-lg border-b border-zinc-800">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${activeVideoKey || details?.trailerKey || movie.trailerKey}?autoplay=1&rel=0`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute inset-0 w-full h-full"
-                    />
+                    {/* Render iframe if current video is a real key, otherwise render fallback search card */}
+                    {(!activeVideoKey || videos.find(v => v.key === activeVideoKey)?.isFallback) ? (
+                      <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-zinc-950/90 p-6 text-center">
+                        <YouTubeIcon className="w-16 h-16 text-red-500 mb-3 animate-pulse" />
+                        <h4 className="text-white font-semibold text-sm mb-2">
+                          {language === "tr" ? "Resmi Fragman Bulunamadı" : "Official Trailer Not Found"}
+                        </h4>
+                        <p className="text-xs text-zinc-400 max-w-md mb-4">
+                          {language === "tr" 
+                            ? "Bu film için resmi bir YouTube fragmanı bulunamadı. YouTube üzerinde arama yapabilirsiniz." 
+                            : "We couldn't find an official YouTube trailer for this movie. You can search for it on YouTube."}
+                        </p>
+                        <a 
+                          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                            activeTitle + ' ' + (
+                              (!activeVideoKey || videos.find(v => v.key === activeVideoKey)?.key === 'SEARCH_TR')
+                                ? 'resmi fragman'
+                                : 'official trailer'
+                            )
+                          )}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+                        >
+                          <YouTubeIcon className="w-4 h-4 text-white" />
+                          <span>
+                            {(!activeVideoKey || videos.find(v => v.key === activeVideoKey)?.key === 'SEARCH_TR')
+                              ? (language === 'tr' ? "YouTube'da Ara (Türkçe)" : "Search YouTube (Turkish)")
+                              : (language === 'tr' ? "YouTube'da Ara (İngilizce)" : "Search YouTube (English)")}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    ) : (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideoKey}?autoplay=1&rel=0`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0 w-full h-full"
+                      />
+                    )}
                   </div>
                   {/* Alternative Videos & Fallback Button Container */}
                   <div className="px-4 py-3 bg-zinc-950/60 border-b border-zinc-800/80 flex flex-col gap-2.5">
                     {/* Alternative video list pills */}
-                    {videos && videos.length > 1 && (
+                    {videos.length > 1 && (
                       <div className="flex flex-wrap gap-1.5 items-center">
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mr-1">
-                          {language === "tr" ? "Diğer Videolar:" : "Alternative Videos:"}
+                          {language === "tr" ? "Fragman Seçenekleri:" : "Trailer Options:"}
                         </span>
-                        {videos.map((vid) => (
-                          <button
-                            key={vid.key}
-                            onClick={() => setActiveVideoKey(vid.key)}
-                            className={`px-2.5 py-1 text-xs rounded-full border transition-all cursor-pointer ${
-                              (activeVideoKey || details?.trailerKey) === vid.key
-                                ? "bg-purple-600 border-purple-500 text-white font-semibold"
-                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-                            }`}
-                          >
-                            {vid.name.length > 25 ? `${vid.name.substring(0, 25)}...` : vid.name} ({vid.type})
-                          </button>
-                        ))}
+                        {videos.map((vid) => {
+                          const isActive = activeVideoKey === vid.key || (activeVideoKey === null && videos[0]?.key === vid.key);
+                          return (
+                            <button
+                              key={vid.key}
+                              onClick={() => {
+                                setActiveVideoKey(vid.key);
+                              }}
+                              className={`px-2.5 py-1 text-xs rounded-full border transition-all cursor-pointer ${
+                                isActive
+                                  ? "bg-purple-600 border-purple-500 text-white font-semibold"
+                                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                              }`}
+                            >
+                              {vid.name.length > 30 ? `${vid.name.substring(0, 30)}...` : vid.name}
+                              {vid.type ? ` (${vid.type})` : ""}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                     
