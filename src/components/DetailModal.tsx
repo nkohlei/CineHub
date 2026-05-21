@@ -29,7 +29,7 @@ interface FullDetails {
   overview: string;
   rating: number;
   trailerKey: string | null;
-  videos: { key: string; name: string; type: string }[];
+  videos: { key: string; name: string; type: string; official?: boolean; site?: string; iso_639_1?: string }[];
   year: string;
   runtime: number;
   genres: string[];
@@ -50,6 +50,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const [showTrailer, setShowTrailer] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeVideoKey, setActiveVideoKey] = useState<string | null>(null);
+  const [videos, setVideos] = useState<{ key: string; name: string; type: string; official?: boolean; site?: string; iso_639_1?: string }[]>([]);
 
   const [activeTmdbId, setActiveTmdbId] = useState<number | null>(null);
   const [activeTitle, setActiveTitle] = useState("");
@@ -161,22 +162,32 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
       setShowTrailer(false);
       setDetails(null); // Wipe old details instantly to prevent stale UI data
       setActiveVideoKey(null);
+      setVideos([]);
       fetch(`/api/tmdb/${activeTmdbId}?language=${language}`)
         .then((res) => res.json())
         .then((data) => { 
           setDetails(data); 
           setLoading(false); 
-          if (data && data.videos && data.videos.length > 0) {
-            const defaultVideo = data.videos.find((v: any) => v.type === "Trailer") || data.videos[0];
-            setActiveVideoKey(defaultVideo?.key || data.trailerKey || null);
-          } else {
-            setActiveVideoKey(data?.trailerKey || null);
-          }
+
+          // Assuming `rawVideos` is the array from TMDB /movie/{id}/videos
+          const rawVideos = data?.videos || [];
+          const officialTrailers = rawVideos.filter((v: any) => v.official && v.site === 'YouTube' && v.type === 'Trailer');
+          
+          // Try to find a local one first, then a global one
+          const localTrailer = officialTrailers.find((v: any) => v.iso_639_1 === 'tr') || officialTrailers[0];
+          const globalTrailer = officialTrailers.find((v: any) => v.iso_639_1 === 'en' && v.key !== localTrailer?.key);
+
+          // Combine and limit to strictly 2 videos max
+          const finalVideos = [localTrailer, globalTrailer].filter(Boolean).slice(0, 2);
+          
+          setVideos(finalVideos);
+          setActiveVideoKey(finalVideos[0]?.key || null);
         })
         .catch(() => setLoading(false));
     } else {
       setDetails(null);
       setActiveVideoKey(null);
+      setVideos([]);
     }
   }, [activeTmdbId, language]);
 
@@ -276,19 +287,21 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
             onClick={(e) => e.stopPropagation()}
             className="relative w-full h-full max-h-screen md:h-[90vh] md:w-[95vw] md:max-w-3xl rounded-none md:rounded-2xl glass-heavy z-10 flex flex-col overflow-hidden"
           >
-            {/* Absolute close button anchored inside the relative box */}
-            {/* Inner scrollable container */}
-            <div
-              ref={modalScrollRef}
-              className="flex-1 w-full overflow-y-auto scrollbar-none rounded-none md:rounded-2xl relative"
-            >
-              {/* Premium Circular Medium-Grey Scrolling Close Button */}
-              <button
+            {/* NEW: Thin Header Area for Close Button */}
+            <div className="absolute top-0 left-0 w-full h-12 bg-zinc-900/90 z-50 flex justify-end items-center px-4">
+              <button 
                 onClick={onClose}
-                className="absolute top-4 right-4 md:top-6 md:right-6 z-[250] scale-90 md:scale-100 p-2.5 rounded-full bg-zinc-700/60 hover:bg-zinc-600/80 border border-zinc-600 text-zinc-300 hover:text-white transition-all shadow-md cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Inner scrollable container: Added pt-12 to push content below the new header */}
+            <div
+              ref={modalScrollRef}
+              className="flex-1 w-full overflow-y-auto scrollbar-none rounded-none md:rounded-2xl relative pt-12"
+            >
             {/* Backdrop image */}
             {(details?.backdropUrl || movie.backdropPath) && !showTrailer && (
               <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden rounded-none md:rounded-t-2xl">
@@ -320,17 +333,17 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                   {/* Alternative Videos & Fallback Button Container */}
                   <div className="px-4 py-3 bg-zinc-950/60 border-b border-zinc-800/80 flex flex-col gap-2.5">
                     {/* Alternative video list pills */}
-                    {details && details.videos && details.videos.length > 1 && (
+                    {videos && videos.length > 1 && (
                       <div className="flex flex-wrap gap-1.5 items-center">
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mr-1">
                           {language === "tr" ? "Diğer Videolar:" : "Alternative Videos:"}
                         </span>
-                        {details.videos.map((vid) => (
+                        {videos.map((vid) => (
                           <button
                             key={vid.key}
                             onClick={() => setActiveVideoKey(vid.key)}
                             className={`px-2.5 py-1 text-xs rounded-full border transition-all cursor-pointer ${
-                              (activeVideoKey || details.trailerKey) === vid.key
+                              (activeVideoKey || details?.trailerKey) === vid.key
                                 ? "bg-purple-600 border-purple-500 text-white font-semibold"
                                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
                             }`}
