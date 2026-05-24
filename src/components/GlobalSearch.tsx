@@ -140,6 +140,14 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
 
   const handleAddMovie = async (movie: TMDBMovie) => {
     addToHistory(movie);
+    // Forcefully wipe the search state to close the dropdown and blur active element
+    setQuery("");
+    setResults([]);
+    setIsOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     try {
       const res = await fetch("/api/movies", {
         method: "POST",
@@ -155,9 +163,6 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
 
       if (res.ok) {
         setSuccessMsg(`Added "${movie.title}" successfully!`);
-        setQuery("");
-        setResults([]);
-        setIsOpen(false);
         setErrorMsg(null);
 
         // Refresh dynamic server states
@@ -177,7 +182,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
     } catch (err) {
       console.error("Failed to add movie:", err);
       setErrorMsg("Failed to add movie.");
-      setTimeout(() => setErrorMsg(null), 3500);
+      setTimeout(() => setErrorMsg(null), 3550);
     }
   };
 
@@ -246,7 +251,11 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
                     if (onSelectPerson) {
                       onSelectPerson(item.id);
                     }
+                    setQuery("");
                     setIsOpen(false);
+                    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                      document.activeElement.blur();
+                    }
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                 >
@@ -349,8 +358,11 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
                       if (onSelectPerson) {
                         onSelectPerson(movie.id);
                       }
-                      setIsOpen(false);
                       setQuery("");
+                      setIsOpen(false);
+                      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                      }
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                   >

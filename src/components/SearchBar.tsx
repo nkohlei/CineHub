@@ -134,6 +134,14 @@ export default function SearchBar({ onMovieAdded, onSelectPerson }: SearchBarPro
 
   const handleAddMovie = async (movie: TMDBMovie) => {
     addToHistory(movie);
+    // Forcefully wipe the search state to close the dropdown and blur active element
+    setSearchTerm("");
+    setResults([]);
+    setIsOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     try {
       const releaseYear = movie.release_date ? movie.release_date.split("-")[0] : "";
       
@@ -149,9 +157,6 @@ export default function SearchBar({ onMovieAdded, onSelectPerson }: SearchBarPro
 
       if (res.ok) {
         setMessage(`Added "${movie.title}" successfully!`);
-        setSearchTerm("");
-        setResults([]);
-        setIsOpen(false);
         
         // Refresh the Next.js router
         router.refresh();
@@ -233,7 +238,11 @@ export default function SearchBar({ onMovieAdded, onSelectPerson }: SearchBarPro
                     if (onSelectPerson) {
                       onSelectPerson(item.id);
                     }
+                    setSearchTerm("");
                     setIsOpen(false);
+                    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                      document.activeElement.blur();
+                    }
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                 >
@@ -336,8 +345,11 @@ export default function SearchBar({ onMovieAdded, onSelectPerson }: SearchBarPro
                       if (onSelectPerson) {
                         onSelectPerson(movie.id);
                       }
-                      setIsOpen(false);
                       setSearchTerm("");
+                      setIsOpen(false);
+                      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                      }
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                   >
