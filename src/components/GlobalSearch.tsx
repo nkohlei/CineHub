@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, Loader2, Film, Plus, User, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
@@ -26,7 +26,17 @@ interface GlobalSearchProps {
 
 export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMovie }: GlobalSearchProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { t, language } = useLanguage();
+
+  useEffect(() => {
+    // Force collapse search results whenever the active view changes/routes update
+    setQuery("");
+    setIsOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [pathname]);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TMDBMovie[]>([]);
@@ -220,6 +230,15 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
           onFocus={() => {
             if (query.trim().length === 0 && recentSearches.length > 0) {
               setIsOpen(true);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setIsOpen(false);
+              setQuery("");
+              if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
             }
           }}
           placeholder={t.searchPlaceholder}

@@ -49,6 +49,28 @@ export default function PersonModal({
   const [isExpanded, setIsExpanded] = useState(false);
   const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'date'>('popularity');
   const modalScrollRef = useRef<HTMLDivElement>(null);
+  const [ratingCache, setRatingCache] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("oxynema_rating_cache");
+        if (cached) {
+          setRatingCache(JSON.parse(cached));
+        }
+      } catch (e) {
+        console.error("Failed to load rating cache:", e);
+      }
+    }
+  }, [personId]);
+
+  const getResolvedRating = (movie: PersonMovieCredit) => {
+    const cached = ratingCache[movie.id];
+    if (cached !== undefined) {
+      return cached === "N/A" ? 0 : Number(cached);
+    }
+    return movie.voteAverage;
+  };
 
   useEffect(() => {
     if (personId) {
@@ -230,7 +252,7 @@ export default function PersonModal({
                           {[...(details.movies || [])]
                             .sort((a, b) => {
                               if (sortBy === "rating") {
-                                return b.voteAverage - a.voteAverage;
+                                return getResolvedRating(b) - getResolvedRating(a);
                               }
                               if (sortBy === "date") {
                                 const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
@@ -283,7 +305,9 @@ export default function PersonModal({
                                     {/* NEW: Hover Rating Badge */}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 backdrop-blur-sm text-yellow-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/10 shadow-lg z-10">
                                       <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                                      {movie.voteAverage ? movie.voteAverage.toFixed(1) : "N/A"}
+                                      {ratingCache[movie.id] !== undefined
+                                        ? ratingCache[movie.id]
+                                        : (movie.voteAverage ? movie.voteAverage.toFixed(1) : "N/A")}
                                     </div>
 
                                     {/* Hover overlay detail */}

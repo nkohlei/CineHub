@@ -154,8 +154,21 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
     if (movie) {
       setActiveTmdbId(movie.tmdbId);
       setActiveTitle(movie.title.split("/")[0].trim());
-      // Set initial rating from the movie record if present
-      const initialRating = movie.imdbRating || (movie.rating ? Number(movie.rating).toFixed(1) : null);
+      // Set initial rating from the movie record if present, otherwise fallback to local rating cache
+      let initialRating = movie.imdbRating || (movie.rating ? Number(movie.rating).toFixed(1) : null);
+      if (!initialRating && movie.tmdbId && typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem("oxynema_rating_cache");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed[movie.tmdbId]) {
+              initialRating = parsed[movie.tmdbId];
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setRating(initialRating || "...");
     } else {
       setActiveTmdbId(null);
@@ -170,7 +183,21 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
       setShowTrailer(false);
       setDetails(null); // Wipe old details instantly to prevent stale UI data
       if (activeTmdbId !== movie?.tmdbId) {
-        setRating("...");
+        let cachedRating = "...";
+        if (typeof window !== "undefined") {
+          try {
+            const cached = localStorage.getItem("oxynema_rating_cache");
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (parsed[activeTmdbId]) {
+                cachedRating = parsed[activeTmdbId];
+              }
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setRating(cachedRating);
       }
       setActiveVideoKey(null);
       setVideos([]);
@@ -182,7 +209,20 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
           // Stabilize rating hydration using database properties or TMDB fallback
           const movieRating = (activeTmdbId === movie?.tmdbId ? movie?.imdbRating : null) || data?.imdbRating || data?.vote_average || data?.rating;
-          setRating(movieRating ? Number(movieRating).toFixed(1) : "N/A");
+          const resolvedRating = movieRating ? Number(movieRating).toFixed(1) : "N/A";
+          setRating(resolvedRating);
+
+          // Synchronize ratings by caching the fresh value in localStorage
+          if (typeof window !== "undefined" && activeTmdbId) {
+            try {
+              const cachedRatingsStr = localStorage.getItem("oxynema_rating_cache") || "{}";
+              const cachedRatings = JSON.parse(cachedRatingsStr);
+              cachedRatings[activeTmdbId] = resolvedRating;
+              localStorage.setItem("oxynema_rating_cache", JSON.stringify(cachedRatings));
+            } catch (e) {
+              console.error("Failed to update rating cache", e);
+            }
+          }
 
           const rawVideos = data?.videos || [];
 

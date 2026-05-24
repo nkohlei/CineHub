@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, Loader2, Film, Plus, User, ChevronRight } from "lucide-react";
 import Image from "next/image";
 
@@ -25,7 +25,17 @@ interface SearchBarProps {
 
 export default function SearchBar({ onMovieAdded, onSelectPerson, onSelectMovie }: SearchBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    // Force collapse search results whenever the active view changes/routes update
+    setSearchTerm("");
+    setIsOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [pathname]);
   const [results, setResults] = useState<TMDBMovie[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -213,6 +223,15 @@ export default function SearchBar({ onMovieAdded, onSelectPerson, onSelectMovie 
           onFocus={() => {
             if (searchTerm.trim().length === 0 && recentSearches.length > 0) {
               setIsOpen(true);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setIsOpen(false);
+              setSearchTerm("");
+              if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
             }
           }}
           placeholder="Search & discover movies..."
