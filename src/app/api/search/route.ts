@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    let url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&language=${languageParam}&page=1`;
+    let url = `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(query)}&language=${languageParam}&page=1&include_adult=false`;
     const headers: Record<string, string> = {
       accept: "application/json",
     };

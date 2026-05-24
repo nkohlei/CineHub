@@ -4,7 +4,7 @@ import path from "path";
 import { FALLBACK_MOVIES } from "@/lib/fallback-data";
 import { getMovieDetails, findTmdbId } from "@/lib/tmdb";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

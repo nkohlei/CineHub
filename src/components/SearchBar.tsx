@@ -2,21 +2,26 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Loader2, Film, Plus } from "lucide-react";
+import { Search, Loader2, Film, Plus, User, ChevronRight } from "lucide-react";
 import Image from "next/image";
 
 interface TMDBMovie {
   id: number;
-  title: string;
+  title?: string;
+  name?: string;
+  media_type?: "movie" | "person" | "tv";
   release_date?: string;
   poster_path?: string | null;
+  profile_path?: string | null;
+  known_for_department?: string;
 }
 
 interface SearchBarProps {
   onMovieAdded?: () => void;
+  onSelectPerson?: (id: number) => void;
 }
 
-export default function SearchBar({ onMovieAdded }: SearchBarProps) {
+export default function SearchBar({ onMovieAdded, onSelectPerson }: SearchBarProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<TMDBMovie[]>([]);
@@ -152,6 +157,56 @@ export default function SearchBar({ onMovieAdded }: SearchBarProps) {
             </div>
           ) : (
             results.map((movie) => {
+              const isPerson = movie.media_type === "person";
+
+              if (isPerson) {
+                const avatarUrl = movie.profile_path
+                  ? `https://image.tmdb.org/t/p/w185${movie.profile_path}`
+                  : null;
+
+                return (
+                  <button
+                    key={`person-${movie.id}`}
+                    onClick={() => {
+                      if (onSelectPerson) {
+                        onSelectPerson(movie.id);
+                      }
+                      setIsOpen(false);
+                      setSearchTerm("");
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-zinc-800/60 overflow-hidden flex-shrink-0 relative border border-zinc-700/30">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={movie.name || "Person"}
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-zinc-500" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-zinc-100 truncate">
+                        {movie.name}
+                      </p>
+                      {movie.known_for_department && (
+                        <p className="text-xs text-zinc-500 mt-0.5">{movie.known_for_department}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-zinc-400 font-semibold flex-shrink-0 bg-zinc-850 hover:bg-zinc-800 px-2.5 py-1.5 rounded-lg border border-zinc-800/50">
+                      <span>Profile</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                );
+              }
+
               const year = movie.release_date ? movie.release_date.split("-")[0] : "";
               const posterUrl = movie.poster_path
                 ? `https://image.tmdb.org/t/p/w154${movie.poster_path}`
@@ -159,7 +214,7 @@ export default function SearchBar({ onMovieAdded }: SearchBarProps) {
 
               return (
                 <button
-                  key={movie.id}
+                  key={`movie-${movie.id}`}
                   onClick={() => handleAddMovie(movie)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                 >
@@ -167,7 +222,7 @@ export default function SearchBar({ onMovieAdded }: SearchBarProps) {
                     {posterUrl ? (
                       <Image
                         src={posterUrl}
-                        alt={movie.title}
+                        alt={movie.title || "Movie"}
                         fill
                         sizes="36px"
                         className="object-cover"

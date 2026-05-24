@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { MovieRecord, CastMember } from "@/lib/types";
-import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2, ExternalLink } from "lucide-react";
+import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2, ExternalLink, Plus } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -21,6 +21,8 @@ interface DetailModalProps {
   onOpenEvaluation?: (movie: MovieRecord) => void;
   friends?: { id: string; name: string; shareId: string; image?: string }[];
   showToast?: (message: string, type: "success" | "error") => void;
+  onSelectPerson?: (id: number) => void;
+  onAddMovie?: (movie: any) => void;
 }
 
 interface FullDetails {
@@ -43,8 +45,9 @@ interface RecommendedMovie {
   release_date?: string;
 }
 
-export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, onOpenEvaluation, friends = [], showToast }: DetailModalProps) {
+export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, onOpenEvaluation, friends = [], showToast, onSelectPerson, onAddMovie }: DetailModalProps) {
   const { t, language } = useLanguage();
+  const isTempMovie = movie?.id?.startsWith("temp-");
   const [details, setDetails] = useState<FullDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -491,8 +494,27 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                   </div>
                 </div>
                 <div className="flex items-center gap-2 relative z-50">
+                  {/* Add to Watchlist Button for temp movies */}
+                  {isTempMovie && onAddMovie && (
+                    <button
+                      onClick={() => {
+                        if (movie && onAddMovie) {
+                          onAddMovie({
+                            id: movie.tmdbId,
+                            title: activeTitle,
+                            poster_path: movie.posterPath || (details?.posterUrl ? details.posterUrl.substring(details.posterUrl.indexOf("/t/p/")) : null)
+                          });
+                        }
+                      }}
+                      className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-750 border border-purple-500/20 text-white px-3 py-2 rounded-xl text-xs font-semibold shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 text-white" />
+                      <span>{language === "tr" ? "Listeye Ekle" : "Add to Watchlist"}</span>
+                    </button>
+                  )}
+
                   {/* Watched Shortcut Button */}
-                  {!movie?.isWatched && activeTmdbId === movie?.tmdbId && onOpenEvaluation && (
+                  {!movie?.isWatched && activeTmdbId === movie?.tmdbId && onOpenEvaluation && !isTempMovie && (
                     <button
                       onClick={() => onOpenEvaluation(movie)}
                       className="flex items-center gap-1 md:gap-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-sm font-medium transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:border-purple-500/20 cursor-pointer"
@@ -501,9 +523,9 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                       <span>{t.watchedShortcut}</span>
                     </button>
                   )}
-
+ 
                   {/* Share Button (always visible if movie exists) */}
-                  {movie && (
+                  {movie && !isTempMovie && (
                     <div className="relative">
                       <button
                         onClick={() => setSharePopoverOpen(!sharePopoverOpen)}
@@ -602,8 +624,16 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                     <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">{t.cast}</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                       {castList.map((member) => (
-                        <div key={member.id} className="text-center">
-                          <div className="relative w-12 h-12 mx-auto rounded-full overflow-hidden bg-zinc-800/60 border border-zinc-700/30 mb-1.5">
+                        <button
+                          key={member.id}
+                          onClick={() => {
+                            if (onSelectPerson) {
+                              onSelectPerson(member.id);
+                            }
+                          }}
+                          className="text-center hover:scale-105 transition-transform cursor-pointer outline-none group border-0 bg-transparent p-0 w-full"
+                        >
+                          <div className="relative w-12 h-12 mx-auto rounded-full overflow-hidden bg-zinc-800/60 border border-zinc-700/30 mb-1.5 group-hover:border-purple-500/55 transition-colors">
                             {member.profileUrl ? (
                               <Image src={member.profileUrl} alt={member.name} fill className="object-cover" />
                             ) : (
@@ -612,9 +642,9 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                               </div>
                             )}
                           </div>
-                          <p className="text-[11px] font-medium text-zinc-200 truncate">{member.name}</p>
+                          <p className="text-[11px] font-medium text-zinc-200 truncate group-hover:text-purple-400 transition-colors">{member.name}</p>
                           <p className="text-[10px] text-zinc-500 truncate">{member.character}</p>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -689,7 +719,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
               )}
 
               {/* Delete / Actions Footer */}
-              {onDelete && activeTmdbId === movie.tmdbId && (
+              {onDelete && activeTmdbId === movie.tmdbId && !isTempMovie && (
                 <div className="flex justify-end items-center mt-6 pt-4 border-t border-zinc-800/30">
                   <div className="relative">
                     {confirmDelete ? (

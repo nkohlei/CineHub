@@ -23,6 +23,7 @@ const DetailModal = dynamic(() => import("@/components/DetailModal"), { ssr: fal
 const EvaluationModal = dynamic(() => import("@/components/EvaluationModal"), { ssr: false });
 const MovieRoulette = dynamic(() => import("@/components/MovieRoulette"), { ssr: false });
 const FriendsModal = dynamic(() => import("@/components/FriendsModal"), { ssr: false });
+const PersonModal = dynamic(() => import("@/components/PersonModal"), { ssr: false });
 
 export default function Home() {
   const { data: session, status } = useSession({
@@ -75,6 +76,7 @@ export default function Home() {
   const [movies, setMovies] = useState<MovieRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
   const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [evaluationMovie, setEvaluationMovie] = useState<MovieRecord | null>(null);
   const [rouletteOpen, setRouletteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -107,8 +109,8 @@ export default function Home() {
     setToastTimeoutId(id);
   }, [toastTimeoutId]);
 
-  const isAnyModalOpen = selectedMovie !== null || evaluationMovie !== null || rouletteOpen;
-
+  const isAnyModalOpen = selectedMovie !== null || evaluationMovie !== null || rouletteOpen || selectedPersonId !== null;
+ 
   useEffect(() => {
     if (isAnyModalOpen) {
       document.body.classList.add("modal-open-prevent-scroll");
@@ -382,6 +384,54 @@ export default function Home() {
     fetchMovies();
   };
 
+  const handleAddMovieFromDetails = async (movie: { id: number; title: string; poster_path: string | null }) => {
+    try {
+      const res = await fetch("/api/movies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tmdbId: movie.id,
+          title: movie.title,
+          posterPath: movie.poster_path || null,
+          isWatched: false,
+          language: language,
+        }),
+      });
+
+      if (res.ok) {
+        showToast(
+          language === "tr"
+            ? `"${movie.title}" listenize eklendi!`
+            : `"${movie.title}" added to your list!`,
+          "success"
+        );
+        
+        await fetchMovies();
+        
+        // Fetch fresh movies list to replace selectedMovie with database record
+        const updatedMoviesRes = await fetch("/api/movies");
+        if (updatedMoviesRes.ok) {
+          const updatedList = await updatedMoviesRes.json();
+          if (Array.isArray(updatedList)) {
+            setMovies(updatedList);
+            const dbRecord = updatedList.find((m) => m.tmdbId === movie.id);
+            if (dbRecord) {
+              setSelectedMovie(dbRecord);
+            } else {
+              setSelectedMovie(null);
+            }
+          }
+        }
+      } else {
+        const errData = await res.json();
+        showToast(errData.error || "Failed to add movie", "error");
+      }
+    } catch (error) {
+      console.error("Failed to add movie from detail modal:", error);
+      showToast("Failed to add movie.", "error");
+    }
+  };
+
   const handleMarkWatched = async (id: string, tagColor: string) => {
     try {
       const res = await fetch(`/api/movies/${id}`, {
@@ -545,7 +595,13 @@ export default function Home() {
           {/* Red Zone: Friends Button & Search Bar */}
           <div className="flex w-full sm:w-auto items-stretch gap-2 justify-end">
             <div className="order-1 md:order-2 flex-grow sm:flex-grow-0 flex items-center">
-              <GlobalSearch onMovieAdded={handleMovieAdded} />
+              <GlobalSearch 
+                onMovieAdded={handleMovieAdded} 
+                onSelectPerson={(personId) => {
+                  setSelectedMovie(null);
+                  setSelectedPersonId(personId);
+                }}
+              />
             </div>
             <button
               onClick={() => setFriendsModalOpen(true)}
@@ -799,7 +855,7 @@ export default function Home() {
       )}
 
       {/* Floating Action Buttons */}
-      {!selectedMovie && !rouletteOpen && (
+      {!selectedMovie && !rouletteOpen && !selectedPersonId && (
         <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[100] flex flex-col items-center gap-3 pb-[env(safe-area-inset-bottom)]">
           
           {/* Dynamic Scroll-to-Top Button */}
@@ -846,6 +902,39 @@ export default function Home() {
         }}
         friends={friends}
         showToast={showToast}
+        onSelectPerson={(personId) => {
+          setSelectedMovie(null);
+          setSelectedPersonId(personId);
+        }}
+        onAddMovie={handleAddMovieFromDetails}
+      />
+
+      {/* Person Modal */}
+      <PersonModal
+        personId={selectedPersonId}
+        onClose={() => setSelectedPersonId(null)}
+        onSelectMovie={(tmdbId, title, posterPath, backdropPath) => {
+          setSelectedPersonId(null);
+          
+          const existing = movies.find((m) => m.tmdbId === tmdbId);
+          if (existing) {
+            setSelectedMovie(existing);
+          } else {
+            setSelectedMovie({
+              id: `temp-${tmdbId}`,
+              title,
+              isWatched: false,
+              watchedAt: null,
+              tagColor: null,
+              tmdbId,
+              posterPath,
+              backdropPath,
+              trailerKey: null,
+              rating: null,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }}
       />
 
       {/* Friends & Inbox Modal */}
