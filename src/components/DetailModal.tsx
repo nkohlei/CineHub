@@ -49,6 +49,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const { t, language } = useLanguage();
   const isTempMovie = movie?.id?.startsWith("temp-");
   const [details, setDetails] = useState<FullDetails | null>(null);
+  const [rating, setRating] = useState<string>("...");
   const [loading, setLoading] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -153,9 +154,13 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
     if (movie) {
       setActiveTmdbId(movie.tmdbId);
       setActiveTitle(movie.title.split("/")[0].trim());
+      // Set initial rating from the movie record if present
+      const initialRating = movie.imdbRating || (movie.rating ? Number(movie.rating).toFixed(1) : null);
+      setRating(initialRating || "...");
     } else {
       setActiveTmdbId(null);
       setActiveTitle("");
+      setRating("...");
     }
   }, [movie]);
 
@@ -164,6 +169,9 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
       setLoading(true);
       setShowTrailer(false);
       setDetails(null); // Wipe old details instantly to prevent stale UI data
+      if (activeTmdbId !== movie?.tmdbId) {
+        setRating("...");
+      }
       setActiveVideoKey(null);
       setVideos([]);
       fetch(`/api/tmdb/${activeTmdbId}?language=${language}`)
@@ -171,6 +179,10 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
         .then((data) => { 
           setDetails(data); 
           setLoading(false); 
+
+          // Stabilize rating hydration using database properties or TMDB fallback
+          const movieRating = (activeTmdbId === movie?.tmdbId ? movie?.imdbRating : null) || data?.imdbRating || data?.vote_average || data?.rating;
+          setRating(movieRating ? Number(movieRating).toFixed(1) : "N/A");
 
           const rawVideos = data?.videos || [];
 
@@ -238,13 +250,16 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
             setActiveVideoKey(finalVideos[0]?.key);
           }
         })
-        .catch(() => setLoading(false));
+        .catch(() => {
+          setLoading(false);
+          setRating("N/A");
+        });
     } else {
       setDetails(null);
       setActiveVideoKey(null);
       setVideos([]);
     }
-  }, [activeTmdbId, language]);
+  }, [activeTmdbId, language, movie]);
 
   useEffect(() => {
     if (activeTmdbId) {
@@ -477,7 +492,7 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                   <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center flex-wrap gap-y-2">
                     {activeTitle}
                     <span className="inline-flex items-center gap-1 ml-3 text-sm font-bold text-[#F5C518] bg-[#F5C518]/10 px-2 py-0.5 rounded border border-[#F5C518]/20">
-                      IMDb {activeTmdbId === movie?.tmdbId ? (movie?.imdbRating || "...") : (details?.rating || "...")}
+                      IMDb {rating}
                     </span>
                   </h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2 text-xs sm:text-sm text-zinc-400">

@@ -601,6 +601,26 @@ export default function Home() {
                   setSelectedMovie(null);
                   setSelectedPersonId(personId);
                 }}
+                onSelectMovie={(tmdbId, title, posterPath, backdropPath) => {
+                  const existing = movies.find((m) => m.tmdbId === tmdbId);
+                  if (existing) {
+                    setSelectedMovie(existing);
+                  } else {
+                    setSelectedMovie({
+                      id: `temp-${tmdbId}`,
+                      title,
+                      isWatched: false,
+                      watchedAt: null,
+                      tagColor: null,
+                      tmdbId,
+                      posterPath,
+                      backdropPath: backdropPath || null,
+                      trailerKey: null,
+                      rating: null,
+                      createdAt: new Date().toISOString(),
+                    });
+                  }
+                }}
               />
             </div>
             <button

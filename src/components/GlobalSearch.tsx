@@ -15,14 +15,16 @@ interface TMDBMovie {
   poster_path?: string | null;
   profile_path?: string | null;
   known_for_department?: string;
+  backdrop_path?: string | null;
 }
 
 interface GlobalSearchProps {
   onMovieAdded?: () => void;
   onSelectPerson?: (id: number) => void;
+  onSelectMovie?: (id: number, title: string, posterPath: string | null, backdropPath: string | null) => void;
 }
 
-export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSearchProps) {
+export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMovie }: GlobalSearchProps) {
   const router = useRouter();
   const { t, language } = useLanguage();
 
@@ -137,6 +139,27 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
       }
     };
   }, [query]);
+
+  const handleMovieClick = (movie: TMDBMovie) => {
+    addToHistory(movie);
+    // Forcefully wipe the search state to close the dropdown and blur active element
+    setQuery("");
+    setResults([]);
+    setIsOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    
+    // Trigger the clean detail view instead of forced adding
+    if (onSelectMovie) {
+      onSelectMovie(
+        movie.id,
+        movie.title || movie.name || "",
+        movie.poster_path || null,
+        movie.backdrop_path || null
+      );
+    }
+  };
 
   const handleAddMovie = async (movie: TMDBMovie) => {
     addToHistory(movie);
@@ -298,7 +321,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
             return (
               <button
                 key={`hist-movie-${item.id}`}
-                onClick={() => handleAddMovie(item)}
+                onClick={() => handleMovieClick(item)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
               >
                 <div className="w-9 h-13 rounded bg-zinc-800/60 overflow-hidden flex-shrink-0 relative">
@@ -324,9 +347,9 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
                     <p className="text-xs text-zinc-500 mt-0.5">{year}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-purple-400 font-semibold flex-shrink-0 bg-purple-500/5 hover:bg-purple-500/10 px-2.5 py-1.5 rounded-lg border border-purple-500/15">
-                  <Plus className="w-3 h-3" />
-                  <span>{t.add}</span>
+                <div className="flex items-center gap-1 text-xs text-zinc-400 font-semibold flex-shrink-0 bg-zinc-850 hover:bg-zinc-800 px-2.5 py-1.5 rounded-lg border border-zinc-800/50">
+                  <span>{language === "tr" ? "Detaylar" : "Details"}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </button>
             );
@@ -405,7 +428,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
               return (
                 <button
                   key={`movie-${movie.id}`}
-                  onClick={() => handleAddMovie(movie)}
+                  onClick={() => handleMovieClick(movie)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                 >
                   <div className="w-9 h-13 rounded bg-zinc-800/60 overflow-hidden flex-shrink-0 relative">
@@ -431,9 +454,9 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson }: GlobalSea
                       <p className="text-xs text-zinc-500 mt-0.5">{year}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-purple-400 font-semibold flex-shrink-0 bg-purple-500/5 hover:bg-purple-500/10 px-2.5 py-1.5 rounded-lg border border-purple-500/15">
-                    <Plus className="w-3 h-3" />
-                    <span>{t.add}</span>
+                  <div className="flex items-center gap-1 text-xs text-zinc-400 font-semibold flex-shrink-0 bg-zinc-850 hover:bg-zinc-800 px-2.5 py-1.5 rounded-lg border border-zinc-800/50">
+                    <span>{language === "tr" ? "Detaylar" : "Details"}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </button>
               );
