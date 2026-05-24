@@ -72,6 +72,7 @@ export async function GET(
             backdropPath: m.backdrop_path || null,
             releaseDate: m.release_date || null,
             popularity: m.popularity || 0,
+            voteAverage: m.vote_average || 0,
             character: m.character || null,
             job: m.job || null,
           });

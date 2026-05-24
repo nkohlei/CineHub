@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-import { X, User, Film, Calendar, Loader2 } from "lucide-react";
+import { X, User, Film, Calendar, Loader2, Star } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -13,6 +13,7 @@ interface PersonMovieCredit {
   backdropPath: string | null;
   releaseDate: string | null;
   popularity: number;
+  voteAverage: number;
   character: string | null;
   job: string | null;
 }
@@ -46,6 +47,7 @@ export default function PersonModal({
   const [details, setDetails] = useState<PersonDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'date'>('popularity');
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -185,12 +187,36 @@ export default function PersonModal({
                         )}
                       </div>
                     </div>
-
+                    
                     {/* Bottom Filmography Section */}
                     <div>
-                      <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">
-                        {language === "tr" ? "Filmografi" : "Filmography"}
-                      </h3>
+                      <div className="flex flex-row items-center justify-between gap-4 mb-4 pb-2 border-b border-zinc-800/20">
+                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                          {language === "tr" ? "Filmografi" : "Filmography"}
+                        </h3>
+                        
+                        {/* Sort Dropdown */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-zinc-500 font-semibold hidden sm:inline">
+                            {language === "tr" ? "Sırala:" : "Sort by:"}
+                          </span>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as any)}
+                            className="bg-zinc-900/60 border border-zinc-850 text-zinc-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 cursor-pointer shadow-md"
+                          >
+                            <option value="popularity">
+                              {language === "tr" ? "Popüler" : "Popularity"}
+                            </option>
+                            <option value="rating">
+                              {language === "tr" ? "Puan" : "Rating"}
+                            </option>
+                            <option value="date">
+                              {language === "tr" ? "Tarih" : "Date"}
+                            </option>
+                          </select>
+                        </div>
+                      </div>
 
                       {details.movies.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
@@ -201,79 +227,97 @@ export default function PersonModal({
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
-                          {details.movies.map((movie) => {
-                            const posterUrl = movie.posterPath
-                              ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
-                              : null;
-                            const year = movie.releaseDate
-                              ? movie.releaseDate.split("-")[0]
-                              : null;
+                          {[...(details.movies || [])]
+                            .sort((a, b) => {
+                              if (sortBy === "rating") {
+                                return b.voteAverage - a.voteAverage;
+                              }
+                              if (sortBy === "date") {
+                                const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+                                const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+                                return dateB - dateA;
+                              }
+                              return b.popularity - a.popularity;
+                            })
+                            .map((movie) => {
+                              const posterUrl = movie.posterPath
+                                ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
+                                : null;
+                              const year = movie.releaseDate
+                                ? movie.releaseDate.split("-")[0]
+                                : null;
 
-                            return (
-                              <div
-                                key={movie.id}
-                                onClick={() => {
-                                  onSelectMovie(
-                                    movie.id,
-                                    movie.title,
-                                    movie.posterPath,
-                                    movie.backdropPath
-                                  );
-                                  onClose();
-                                }}
-                                className="group cursor-pointer text-left snap-start"
-                              >
-                                {/* Poster Image container */}
-                                <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-900/60 border border-zinc-800/60 shadow-md group-hover:scale-105 group-hover:border-purple-500/40 transition-all duration-300">
-                                  {posterUrl ? (
-                                    <Image
-                                      src={posterUrl}
-                                      alt={movie.title}
-                                      fill
-                                      sizes="(max-width: 640px) 100px, 150px"
-                                      className="object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 flex flex-col items-center justify-center p-2 text-center">
-                                      <Film className="w-7 h-7 text-zinc-600 mb-1" />
-                                      <span className="text-[9px] text-zinc-500 font-semibold truncate w-full">
-                                        {movie.title}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Hover overlay detail */}
-                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
-                                    {movie.character ? (
-                                      <p className="text-[10px] text-purple-300 font-semibold truncate leading-tight">
-                                        {movie.character}
-                                      </p>
-                                    ) : movie.job ? (
-                                      <p className="text-[10px] text-emerald-300 font-semibold truncate leading-tight">
-                                        {movie.job}
-                                      </p>
-                                    ) : null}
-                                    {year && (
-                                      <span className="text-[9px] text-zinc-400 font-medium mt-0.5 flex items-center gap-0.5">
-                                        <Calendar className="w-2.5 h-2.5" />
-                                        {year}
-                                      </span>
+                              return (
+                                <div
+                                  key={movie.id}
+                                  onClick={() => {
+                                    onSelectMovie(
+                                      movie.id,
+                                      movie.title,
+                                      movie.posterPath,
+                                      movie.backdropPath
+                                    );
+                                    onClose();
+                                  }}
+                                  className="group cursor-pointer text-left snap-start"
+                                >
+                                  {/* Poster Image container */}
+                                  <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-900/60 border border-zinc-800/60 shadow-md group-hover:scale-105 group-hover:border-purple-500/40 transition-all duration-300">
+                                    {posterUrl ? (
+                                      <Image
+                                        src={posterUrl}
+                                        alt={movie.title}
+                                        fill
+                                        sizes="(max-width: 640px) 100px, 150px"
+                                        className="object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 flex flex-col items-center justify-center p-2 text-center">
+                                        <Film className="w-7 h-7 text-zinc-600 mb-1" />
+                                        <span className="text-[9px] text-zinc-500 font-semibold truncate w-full">
+                                          {movie.title}
+                                        </span>
+                                      </div>
                                     )}
-                                  </div>
-                                </div>
 
-                                {/* Movie title and info below poster */}
-                                <h4 className="text-xs font-semibold text-zinc-300 mt-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
-                                  {movie.title}
-                                </h4>
-                                {year && (
-                                  <span className="text-[10px] text-zinc-500 font-medium font-mono">
-                                    {year}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
+                                    {/* NEW: Hover Rating Badge */}
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 backdrop-blur-sm text-yellow-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/10 shadow-lg z-10">
+                                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                      {movie.voteAverage ? movie.voteAverage.toFixed(1) : "N/A"}
+                                    </div>
+
+                                    {/* Hover overlay detail */}
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
+                                      {movie.character ? (
+                                        <p className="text-[10px] text-purple-300 font-semibold truncate leading-tight">
+                                          {movie.character}
+                                        </p>
+                                      ) : movie.job ? (
+                                        <p className="text-[10px] text-emerald-300 font-semibold truncate leading-tight">
+                                          {movie.job}
+                                        </p>
+                                      ) : null}
+                                      {year && (
+                                        <span className="text-[9px] text-zinc-400 font-medium mt-0.5 flex items-center gap-0.5">
+                                          <Calendar className="w-2.5 h-2.5" />
+                                          {year}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Movie title and info below poster */}
+                                  <h4 className="text-xs font-semibold text-zinc-300 mt-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
+                                    {movie.title}
+                                  </h4>
+                                  {year && (
+                                    <span className="text-[10px] text-zinc-500 font-medium font-mono">
+                                      {year}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
                         </div>
                       )}
                     </div>
