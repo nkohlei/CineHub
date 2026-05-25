@@ -9,6 +9,8 @@ interface TMDBMovie {
   id: number;
   title?: string;
   name?: string;
+  original_title?: string;
+  original_name?: string;
   media_type?: "movie" | "person" | "tv";
   release_date?: string;
   poster_path?: string | null;
