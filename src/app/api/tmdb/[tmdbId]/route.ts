@@ -75,13 +75,31 @@ export async function GET(
   if (apiKey && apiKey !== "YOUR_TMDB_API_KEY_HERE" && apiKey.length > 10) {
     try {
       const details = await getMovieDetails(id, lang);
+
+      // Fetch dynamic IMDb Rating from OMDb
+      let imdbRating: string | null = null;
+      if (details.imdb_id && process.env.OMDB_API_KEY) {
+        try {
+          const omdbRes = await fetch(`https://www.omdbapi.com/?i=${details.imdb_id}&apikey=${process.env.OMDB_API_KEY}`);
+          if (omdbRes.ok) {
+            const omdbData = await omdbRes.json();
+            if (omdbData.Response === "True" && omdbData.imdbRating && omdbData.imdbRating !== "N/A") {
+              imdbRating = omdbData.imdbRating;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch OMDb rating inside proxy route:", e);
+        }
+      }
+
       const response = {
         title: details.title || null,
         releaseDate: details.release_date || null,
         posterUrl: getPosterUrl(details.poster_path, "w500"),
         backdropUrl: getBackdropUrl(details.backdrop_path),
         overview: details.overview,
-        rating: Math.round(details.vote_average * 10) / 10,
+        rating: imdbRating ? parseFloat(imdbRating) : (Math.round(details.vote_average * 10) / 10),
+        imdbRating: imdbRating,
         trailerKey: details.trailerKey,
         videos: details.videos || [],
         year: details.release_date?.split("-")[0] || "",
