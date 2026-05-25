@@ -15,9 +15,9 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === "authenticated") {
       const urlParams = new URLSearchParams(window.location.search);
-      const redirectMovie = urlParams.get('redirect_movie');
-      if (redirectMovie) {
-        router.push(`/?movie=${redirectMovie}`);
+      const redirectPath = urlParams.get('redirect');
+      if (redirectPath) {
+        router.push(redirectPath);
       } else {
         router.push("/");
       }

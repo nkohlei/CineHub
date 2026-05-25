@@ -66,13 +66,7 @@ export default function Home() {
       
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const movieIdFromUrl = urlParams.get('movie');
-        if (movieIdFromUrl) {
-          router.push(`/login?redirect_movie=${movieIdFromUrl}`);
-        } else {
-          router.push("/login");
-        }
+        router.push("/login");
       }
     }
   }, [status, router]);
@@ -86,13 +80,7 @@ export default function Home() {
         const handleGlobalClick = (e: MouseEvent) => {
           e.preventDefault();
           e.stopPropagation();
-          const urlParams = new URLSearchParams(window.location.search);
-          const movieIdFromUrl = urlParams.get('movie');
-          if (movieIdFromUrl) {
-            router.push(`/login?redirect_movie=${movieIdFromUrl}`);
-          } else {
-            router.push("/login");
-          }
+          router.push("/login");
         };
         window.addEventListener("click", handleGlobalClick, true);
         return () => window.removeEventListener("click", handleGlobalClick, true);
@@ -108,74 +96,6 @@ export default function Home() {
       }
     }
   }, []);
-
-  // Deep-Linking State Hydration on Mount
-  useEffect(() => {
-    if (!mounted || status === "loading") return;
-    const urlParams = new URLSearchParams(window.location.search);
-    const movieIdFromUrl = urlParams.get("movie");
-    
-    if (movieIdFromUrl) {
-      const targetMovieId = Number(movieIdFromUrl);
-      
-      if (status === "unauthenticated") {
-        router.push(`/login?redirect_movie=${targetMovieId}`);
-        return;
-      }
-      
-      if (status === "authenticated" && movies.length > 0) {
-        const timer = setTimeout(() => {
-          const existing = movies.find((m) => Number(m.tmdbId) === targetMovieId);
-          if (existing) {
-            setSelectedMovie(existing);
-          } else {
-            fetch(`/api/tmdb/${targetMovieId}?language=${language}`)
-              .then((res) => res.json())
-              .then((data) => {
-                setSelectedMovie({
-                  id: `temp-${targetMovieId}`,
-                  title: data.title || "İsimsiz Film",
-                  isWatched: false,
-                  watchedAt: null,
-                  tagColor: null,
-                  tmdbId: targetMovieId,
-                  posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
-                  backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
-                  trailerKey: data.trailerKey || null,
-                  rating: data.rating || null,
-                  createdAt: new Date().toISOString(),
-                });
-              })
-              .catch((err) => {
-                console.error("Failed to parse movie from URL query parameter:", err);
-              });
-          }
-        }, 100);
-
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [status, movies, language, router, mounted]);
-
-  // Synchronize Modal State with URL Query Params
-  useEffect(() => {
-    if (!mounted || typeof window === "undefined") return;
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentMovieQuery = urlParams.get("movie");
-
-    if (selectedMovie) {
-      const tmdbId = selectedMovie.tmdbId;
-      if (currentMovieQuery !== String(tmdbId)) {
-        const newUrl = `${window.location.origin}${window.location.pathname}?movie=${tmdbId}`;
-        window.history.pushState({ path: newUrl }, "", newUrl);
-      }
-    } else {
-      if (currentMovieQuery) {
-        const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-        window.history.pushState({ path: cleanUrl }, "", cleanUrl);
-      }
-    }
-  }, [selectedMovie, mounted]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
