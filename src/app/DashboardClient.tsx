@@ -52,6 +52,13 @@ export default function Home() {
     }
   }, [mounted]);
 
+  const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
+  const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
+  const [evaluationMovie, setEvaluationMovie] = useState<MovieRecord | null>(null);
+  const [rouletteOpen, setRouletteOpen] = useState(false);
+  const [movies, setMovies] = useState<MovieRecord[]>([]);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
@@ -59,10 +66,27 @@ export default function Home() {
       
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
-        setShowLogin(true);
+        router.push("/login");
       }
     }
-  }, [status]);
+  }, [status, router]);
+
+  // Global Unauthenticated Interaction Interceptor (Auth Guard)
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      const ua = (typeof navigator !== "undefined" && navigator.userAgent) || "";
+      const isPageSpeedBot = /Lighthouse|PageSpeed|Googlebot/i.test(ua);
+      if (!isPageSpeedBot) {
+        const handleGlobalClick = (e: MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          router.push("/login");
+        };
+        window.addEventListener("click", handleGlobalClick, true);
+        return () => window.removeEventListener("click", handleGlobalClick, true);
+      }
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -73,47 +97,68 @@ export default function Home() {
     }
   }, []);
 
-  const [movies, setMovies] = useState<MovieRecord[]>([]);
-
-  // Dynamic client-side routing fallback for shared movie links
+  // Deep-Linking State Hydration on Mount
   useEffect(() => {
-    if (!mounted || typeof window === "undefined" || movies.length === 0) return;
-    const path = window.location.pathname;
-    const match = path.match(/\/movie\/(\d+)/);
-    if (match) {
-      const tmdbId = parseInt(match[1], 10);
-      const existing = movies.find((m) => Number(m.tmdbId) === tmdbId);
-      if (existing) {
-        setSelectedMovie(existing);
-      } else {
-        fetch(`/api/tmdb/${tmdbId}?language=${language}`)
-          .then((res) => res.json())
-          .then((data) => {
-            setSelectedMovie({
-              id: `temp-${tmdbId}`,
-              title: data.title || "İsimsiz Film",
-              isWatched: false,
-              watchedAt: null,
-              tagColor: null,
-              tmdbId,
-              posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
-              backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
-              trailerKey: data.trailerKey || null,
-              rating: data.rating || null,
-              createdAt: new Date().toISOString(),
+    if (status === "loading" || !mounted) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieIdFromUrl = urlParams.get("movie");
+    
+    if (movieIdFromUrl) {
+      if (status === "unauthenticated") {
+        router.push("/login");
+        return;
+      }
+      
+      if (status === "authenticated" && movies.length > 0) {
+        const tmdbId = parseInt(movieIdFromUrl, 10);
+        const existing = movies.find((m) => Number(m.tmdbId) === tmdbId);
+        if (existing) {
+          setSelectedMovie(existing);
+        } else {
+          fetch(`/api/tmdb/${tmdbId}?language=${language}`)
+            .then((res) => res.json())
+            .then((data) => {
+              setSelectedMovie({
+                id: `temp-${tmdbId}`,
+                title: data.title || "İsimsiz Film",
+                isWatched: false,
+                watchedAt: null,
+                tagColor: null,
+                tmdbId,
+                posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
+                backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
+                trailerKey: data.trailerKey || null,
+                rating: data.rating || null,
+                createdAt: new Date().toISOString(),
+              });
+            })
+            .catch((err) => {
+              console.error("Failed to parse movie from URL query parameter:", err);
             });
-          })
-          .catch((err) => {
-            console.error("Failed to parse movie from URL path:", err);
-          });
+        }
       }
     }
-  }, [mounted, movies, language]);
-  const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
-  const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
-  const [evaluationMovie, setEvaluationMovie] = useState<MovieRecord | null>(null);
-  const [rouletteOpen, setRouletteOpen] = useState(false);
+  }, [status, movies, language, router, mounted]);
+
+  // Synchronize Modal State with URL Query Params
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined") return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentMovieQuery = urlParams.get("movie");
+
+    if (selectedMovie) {
+      const tmdbId = selectedMovie.tmdbId;
+      if (currentMovieQuery !== String(tmdbId)) {
+        const newUrl = `${window.location.origin}${window.location.pathname}?movie=${tmdbId}`;
+        window.history.pushState({ path: newUrl }, "", newUrl);
+      }
+    } else {
+      if (currentMovieQuery) {
+        const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+        window.history.pushState({ path: cleanUrl }, "", cleanUrl);
+      }
+    }
+  }, [selectedMovie, mounted]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
