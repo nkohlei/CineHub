@@ -66,7 +66,12 @@ export default function Home() {
       
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
-        router.push("/login");
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/movie/')) {
+          router.push(`/login?redirect=${currentPath}`);
+        } else {
+          router.push("/login");
+        }
       }
     }
   }, [status, router]);
@@ -80,7 +85,12 @@ export default function Home() {
         const handleGlobalClick = (e: MouseEvent) => {
           e.preventDefault();
           e.stopPropagation();
-          router.push("/login");
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/movie/')) {
+            router.push(`/login?redirect=${currentPath}`);
+          } else {
+            router.push("/login");
+          }
         };
         window.addEventListener("click", handleGlobalClick, true);
         return () => window.removeEventListener("click", handleGlobalClick, true);
@@ -96,6 +106,74 @@ export default function Home() {
       }
     }
   }, []);
+
+  // Deep-Linking Path State Hydration on Mount
+  useEffect(() => {
+    if (!mounted || status === "loading") return;
+    const currentPath = window.location.pathname;
+    
+    if (currentPath.startsWith('/movie/')) {
+      const extractedId = currentPath.split('/movie/')[1];
+      if (extractedId) {
+        const targetMovieId = Number(extractedId);
+        
+        if (status === "unauthenticated") {
+          router.push(`/login?redirect=/movie/${targetMovieId}`);
+          return;
+        }
+        
+        if (status === "authenticated" && movies.length > 0) {
+          const timer = setTimeout(() => {
+            const existing = movies.find((m) => Number(m.tmdbId) === targetMovieId);
+            if (existing) {
+              setSelectedMovie(existing);
+            } else {
+              fetch(`/api/tmdb/${targetMovieId}?language=${language}`)
+                .then((res) => res.json())
+                .then((data) => {
+                  setSelectedMovie({
+                    id: `temp-${targetMovieId}`,
+                    title: data.title || "İsimsiz Film",
+                    isWatched: false,
+                    watchedAt: null,
+                    tagColor: null,
+                    tmdbId: targetMovieId,
+                    posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
+                    backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
+                    trailerKey: data.trailerKey || null,
+                    rating: data.rating || null,
+                    createdAt: new Date().toISOString(),
+                  });
+                })
+                .catch((err) => {
+                  console.error("Failed to parse movie from URL path parameter:", err);
+                });
+            }
+          }, 150);
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [status, movies, language, router, mounted]);
+
+  // Synchronize Modal State with URL Paths using shallow pushes
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined") return;
+    const currentPath = window.location.pathname;
+
+    if (selectedMovie) {
+      const tmdbId = selectedMovie.tmdbId;
+      const targetPath = `/movie/${tmdbId}`;
+      if (currentPath !== targetPath) {
+        window.history.pushState({ path: targetPath }, '', targetPath);
+      }
+    } else {
+      if (currentPath !== '/') {
+        window.history.pushState({ path: '/' }, '', '/');
+      }
+    }
+  }, [selectedMovie, mounted]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);

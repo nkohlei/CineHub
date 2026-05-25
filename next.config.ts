@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/movie/:id',
+        destination: '/',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
