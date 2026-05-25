@@ -14,7 +14,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/");
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectMovie = urlParams.get('redirect_movie');
+      if (redirectMovie) {
+        router.push(`/?movie=${redirectMovie}`);
+      } else {
+        router.push("/");
+      }
     }
   }, [status, router]);
 

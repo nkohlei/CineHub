@@ -66,7 +66,13 @@ export default function Home() {
       
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
-        router.push("/login");
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieIdFromUrl = urlParams.get('movie');
+        if (movieIdFromUrl) {
+          router.push(`/login?redirect_movie=${movieIdFromUrl}`);
+        } else {
+          router.push("/login");
+        }
       }
     }
   }, [status, router]);
@@ -80,7 +86,13 @@ export default function Home() {
         const handleGlobalClick = (e: MouseEvent) => {
           e.preventDefault();
           e.stopPropagation();
-          router.push("/login");
+          const urlParams = new URLSearchParams(window.location.search);
+          const movieIdFromUrl = urlParams.get('movie');
+          if (movieIdFromUrl) {
+            router.push(`/login?redirect_movie=${movieIdFromUrl}`);
+          } else {
+            router.push("/login");
+          }
         };
         window.addEventListener("click", handleGlobalClick, true);
         return () => window.removeEventListener("click", handleGlobalClick, true);
@@ -99,43 +111,48 @@ export default function Home() {
 
   // Deep-Linking State Hydration on Mount
   useEffect(() => {
-    if (status === "loading" || !mounted) return;
+    if (!mounted || status === "loading") return;
     const urlParams = new URLSearchParams(window.location.search);
     const movieIdFromUrl = urlParams.get("movie");
     
     if (movieIdFromUrl) {
+      const targetMovieId = Number(movieIdFromUrl);
+      
       if (status === "unauthenticated") {
-        router.push("/login");
+        router.push(`/login?redirect_movie=${targetMovieId}`);
         return;
       }
       
       if (status === "authenticated" && movies.length > 0) {
-        const tmdbId = parseInt(movieIdFromUrl, 10);
-        const existing = movies.find((m) => Number(m.tmdbId) === tmdbId);
-        if (existing) {
-          setSelectedMovie(existing);
-        } else {
-          fetch(`/api/tmdb/${tmdbId}?language=${language}`)
-            .then((res) => res.json())
-            .then((data) => {
-              setSelectedMovie({
-                id: `temp-${tmdbId}`,
-                title: data.title || "İsimsiz Film",
-                isWatched: false,
-                watchedAt: null,
-                tagColor: null,
-                tmdbId,
-                posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
-                backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
-                trailerKey: data.trailerKey || null,
-                rating: data.rating || null,
-                createdAt: new Date().toISOString(),
+        const timer = setTimeout(() => {
+          const existing = movies.find((m) => Number(m.tmdbId) === targetMovieId);
+          if (existing) {
+            setSelectedMovie(existing);
+          } else {
+            fetch(`/api/tmdb/${targetMovieId}?language=${language}`)
+              .then((res) => res.json())
+              .then((data) => {
+                setSelectedMovie({
+                  id: `temp-${targetMovieId}`,
+                  title: data.title || "İsimsiz Film",
+                  isWatched: false,
+                  watchedAt: null,
+                  tagColor: null,
+                  tmdbId: targetMovieId,
+                  posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
+                  backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
+                  trailerKey: data.trailerKey || null,
+                  rating: data.rating || null,
+                  createdAt: new Date().toISOString(),
+                });
+              })
+              .catch((err) => {
+                console.error("Failed to parse movie from URL query parameter:", err);
               });
-            })
-            .catch((err) => {
-              console.error("Failed to parse movie from URL query parameter:", err);
-            });
-        }
+          }
+        }, 100);
+
+        return () => clearTimeout(timer);
       }
     }
   }, [status, movies, language, router, mounted]);
