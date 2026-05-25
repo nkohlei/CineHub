@@ -30,29 +30,38 @@ export async function GET(request: NextRequest) {
       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
       : "https://oxynema.netlify.app/images/og-preview.png";
     const titleText = `🍿 ${movie.title} (${year}) - Oxynema`;
-    const descriptionText = `⭐ IMDb: ${movie.vote_average?.toFixed(1)}/10 | ${movie.overview?.substring(0, 150)}...`;
+    const descriptionText = `⭐ IMDb: ${movie.vote_average?.toFixed(1)}/10 | ${movie.overview?.substring(0, 160)}...`;
 
     // Emit raw static metadata layout directly into the scraper bot's pipeline
     const html = `<!DOCTYPE html>
-<html>
+<html lang="tr">
   <head>
+    <meta charset="utf-8" />
     <title>${titleText}</title>
     <meta name="description" content="${descriptionText}" />
+    
     <meta property="og:type" content="video.movie" />
+    <meta property="og:site_name" content="Oxynema" />
     <meta property="og:title" content="${titleText}" />
     <meta property="og:description" content="${descriptionText}" />
+    <meta property="og:url" content="https://oxynema.netlify.app/movie/${id}" />
+    
     <meta property="og:image" content="${imageUrl}" />
     <meta property="og:image:secure_url" content="${imageUrl}" />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="500" />
-    <meta property="og:image:height" content="750" />
-    <meta property="og:url" content="https://oxynema.netlify.app/movie/${id}" />
-    <meta property="og:site_name" content="Oxynema" />
+    <meta property="og:image:width" content="600" />
+    <meta property="og:image:height" content="900" />
+    
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${titleText}" />
+    <meta name="twitter:description" content="${descriptionText}" />
     <meta name="twitter:image" content="${imageUrl}" />
   </head>
   <body>
-    <p>Redirecting to Oxynema...</p>
+    <script>
+      // Client side bridge: If a human lands here, shift them to the app grid
+      window.location.href = "/movie/${id}";
+    </script>
   </body>
 </html>`;
 
@@ -60,6 +69,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Expires": "0",
+        "Surrogate-Control": "max-age=0",
       },
     });
   } catch (error) {
