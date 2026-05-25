@@ -54,7 +54,7 @@ export default function SearchBar({ onMovieAdded, onSelectPerson, onSelectMovie,
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-  }, [activeMovieId, activePersonId]);
+  }, [activeMovieId, activePersonId, pathname]);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);

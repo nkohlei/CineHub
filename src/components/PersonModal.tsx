@@ -50,7 +50,6 @@ function MovieCreditCard({
   updateRatingCache,
 }: MovieCreditCardProps) {
   const { language } = useLanguage();
-  const [freshRating, setFreshRating] = useState<string | null>(null);
 
   // 1. Get rating from cache or db movies
   const cachedRating = ratingCache[movie.id];
@@ -62,27 +61,7 @@ function MovieCreditCard({
     }
   }
 
-  const displayRating = cachedRating || (dbRating && dbRating !== "..." ? dbRating : null) || freshRating || (movie.voteAverage ? movie.voteAverage.toFixed(1) : null);
-
-  useEffect(() => {
-    // If we already have a cache or db rating, no need to fetch
-    if (cachedRating || (dbRating && dbRating !== "...")) return;
-
-    // Fetch fresh metrics with a small random stagger to prevent rate limit spikes
-    const timer = setTimeout(() => {
-      fetch(`/api/tmdb/${movie.id}?language=${language}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const movieRating = data?.imdbRating || data?.vote_average || data?.rating;
-          const resolved = movieRating ? Number(movieRating).toFixed(1) : "N/A";
-          setFreshRating(resolved);
-          updateRatingCache(movie.id, resolved);
-        })
-        .catch((err) => console.error("Error loading fresh rating for card:", err));
-    }, Math.random() * 800 + 100);
-
-    return () => clearTimeout(timer);
-  }, [movie.id, cachedRating, dbRating, language, updateRatingCache]);
+  const displayRating = cachedRating || (dbRating && dbRating !== "..." ? dbRating : null) || (movie.voteAverage ? Number(movie.voteAverage).toFixed(1) : null);
 
   const posterUrl = movie.posterPath
     ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
@@ -185,6 +164,7 @@ export default function PersonModal({
   const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'date'>('popularity');
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const [ratingCache, setRatingCache] = useState<Record<number, string>>({});
+  const [filmography, setFilmography] = useState<any[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -239,27 +219,78 @@ export default function PersonModal({
   };
 
   useEffect(() => {
-    if (personId) {
+    async function loadCorrectActorData() {
+      if (!personId) {
+        setDetails(null);
+        setFilmography([]);
+        return;
+      }
       setLoading(true);
       setDetails(null);
+      setFilmography([]);
       setIsExpanded(false);
-      
-      fetch(`/api/tmdb/person/${personId}?language=${language}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch person details");
-          return res.json();
-        })
-        .then((data) => {
-          setDetails(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          setLoading(false);
-        });
-    } else {
-      setDetails(null);
+
+      try {
+        // 1. Get the list of movies the actor was in
+        const res = await fetch(`/api/tmdb/person/${personId}?language=${language}`);
+        if (!res.ok) throw new Error("Failed to fetch person details");
+        const data = await res.json();
+        
+        // Save person basic details
+        setDetails(data);
+        const rawMovies = data.movies || [];
+
+        // 2. Sort them by popularity initially to get the top 20 hits
+        const topMovies = [...rawMovies]
+          .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+          .slice(0, 20); // Limit to top 20 to avoid rate limiting initial paint
+
+        // 3. CRITICAL: Fetch the 100% CORRECT live data for each movie from individual endpoints
+        const hydratedMovies = await Promise.all(
+          topMovies.map(async (m: any) => {
+            try {
+              const detailRes = await fetch(`/api/tmdb/${m.id}?language=${language}`);
+              if (!detailRes.ok) throw new Error("Failed to fetch movie detail");
+              const freshDetails = await detailRes.json();
+              
+              return {
+                id: m.id,
+                title: freshDetails.title || freshDetails.original_title || "İsimsiz Film",
+                voteAverage: freshDetails.vote_average || freshDetails.voteAverage || freshDetails.rating || 0,
+                posterPath: freshDetails.poster_path || freshDetails.posterPath || null,
+                backdropPath: freshDetails.backdrop_path || freshDetails.backdropPath || null,
+                releaseDate: freshDetails.release_date || freshDetails.releaseDate || null,
+                popularity: freshDetails.popularity || 0,
+                character: m.character || null,
+                job: m.job || null,
+              };
+            } catch (err) {
+              console.error(`Failed to hydrate details for movie ID ${m.id}`, err);
+              // Fallback safe mapping only if individual fetch fails
+              return {
+                id: m.id,
+                title: m.title || "İsimsiz Film",
+                voteAverage: m.voteAverage || m.vote_average || 0,
+                posterPath: m.posterPath || m.poster_path || null,
+                backdropPath: m.backdropPath || m.backdrop_path || null,
+                releaseDate: m.releaseDate || m.release_date || null,
+                popularity: m.popularity || 0,
+                character: m.character || null,
+                job: m.job || null,
+              };
+            }
+          })
+        );
+
+        setFilmography(hydratedMovies);
+      } catch (error) {
+        console.error("Failed to hydrate actor filmography correctly", error);
+      } finally {
+        setLoading(false);
+      }
     }
+
+    loadCorrectActorData();
   }, [personId, language]);
 
   useEffect(() => {
@@ -406,7 +437,7 @@ export default function PersonModal({
                         </div>
                       </div>
 
-                      {details.movies.length === 0 ? (
+                      {filmography.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
                           <Film className="w-8 h-8 mb-2 opacity-50" />
                           <p className="text-sm">
@@ -415,8 +446,8 @@ export default function PersonModal({
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
-                          {[...(details.movies || [])]
-                            .filter((movie) => movie && movie.id && movie.popularity !== undefined && movie.popularity > 0)
+                          {[...filmography]
+                            .filter((movie) => movie && movie.id)
                             .sort((a, b) => {
                               if (sortBy === "rating") {
                                 const diff = getResolvedRating(b) - getResolvedRating(a);

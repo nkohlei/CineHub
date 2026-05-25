@@ -76,6 +76,8 @@ export async function GET(
     try {
       const details = await getMovieDetails(id, lang);
       const response = {
+        title: details.title || null,
+        releaseDate: details.release_date || null,
         posterUrl: getPosterUrl(details.poster_path, "w500"),
         backdropUrl: getBackdropUrl(details.backdrop_path),
         overview: details.overview,
@@ -104,6 +106,8 @@ export async function GET(
   const fallback = FALLBACK_DETAILS[id];
   if (fallback) {
     return NextResponse.json({
+      title: null,
+      releaseDate: fallback.year ? `${fallback.year}-01-01` : null,
       posterUrl: `https://image.tmdb.org/t/p/w500${fallback.posterPath}`,
       backdropUrl: fallback.backdropPath ? `https://image.tmdb.org/t/p/w1280${fallback.backdropPath}` : null,
       overview: fallback.overview,

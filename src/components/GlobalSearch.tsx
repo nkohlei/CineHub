@@ -58,7 +58,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-  }, [activeMovieId, activePersonId]);
+  }, [activeMovieId, activePersonId, pathname]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
