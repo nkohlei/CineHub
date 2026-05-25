@@ -50,9 +50,15 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
     }
   };
 
+  // Force reset search UI anytime the application changes active context
   useEffect(() => {
-    resetSearch();
-  }, [activeMovieId, activePersonId, pathname]);
+    setQuery('');
+    setIsOpen(false);
+    setResults([]);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [activeMovieId, activePersonId]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);

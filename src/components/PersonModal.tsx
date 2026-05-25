@@ -27,6 +27,139 @@ interface PersonDetails {
   movies: PersonMovieCredit[];
 }
 
+interface MovieCreditCardProps {
+  movie: PersonMovieCredit;
+  ratingCache: Record<number, string>;
+  databaseMovies?: any[];
+  onSelectMovie: (
+    tmdbId: number,
+    title: string,
+    posterPath: string | null,
+    backdropPath: string | null
+  ) => void;
+  onClose: () => void;
+  updateRatingCache: (id: number, rating: string) => void;
+}
+
+function MovieCreditCard({
+  movie,
+  ratingCache,
+  databaseMovies,
+  onSelectMovie,
+  onClose,
+  updateRatingCache,
+}: MovieCreditCardProps) {
+  const { language } = useLanguage();
+  const [freshRating, setFreshRating] = useState<string | null>(null);
+
+  // 1. Get rating from cache or db movies
+  const cachedRating = ratingCache[movie.id];
+  let dbRating: string | null = null;
+  if (databaseMovies) {
+    const dbMovie = databaseMovies.find((m) => m.tmdbId === movie.id);
+    if (dbMovie) {
+      dbRating = dbMovie.imdbRating || (dbMovie.rating ? dbMovie.rating.toFixed(1) : null);
+    }
+  }
+
+  const displayRating = cachedRating || (dbRating && dbRating !== "..." ? dbRating : null) || freshRating || (movie.voteAverage ? movie.voteAverage.toFixed(1) : null);
+
+  useEffect(() => {
+    // If we already have a cache or db rating, no need to fetch
+    if (cachedRating || (dbRating && dbRating !== "...")) return;
+
+    // Fetch fresh metrics with a small random stagger to prevent rate limit spikes
+    const timer = setTimeout(() => {
+      fetch(`/api/tmdb/${movie.id}?language=${language}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const movieRating = data?.imdbRating || data?.vote_average || data?.rating;
+          const resolved = movieRating ? Number(movieRating).toFixed(1) : "N/A";
+          setFreshRating(resolved);
+          updateRatingCache(movie.id, resolved);
+        })
+        .catch((err) => console.error("Error loading fresh rating for card:", err));
+    }, Math.random() * 800 + 100);
+
+    return () => clearTimeout(timer);
+  }, [movie.id, cachedRating, dbRating, language, updateRatingCache]);
+
+  const posterUrl = movie.posterPath
+    ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
+    : null;
+  const year = movie.releaseDate ? movie.releaseDate.split("-")[0] : null;
+  const resolvedTitle = movie.title || "İsimsiz Film";
+
+  return (
+    <div
+      onClick={() => {
+        onSelectMovie(movie.id, resolvedTitle, movie.posterPath, movie.backdropPath);
+        onClose();
+      }}
+      className="group cursor-pointer text-left snap-start"
+    >
+      <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-900/60 border border-zinc-800/60 shadow-md group-hover:scale-105 group-hover:border-purple-500/40 transition-all duration-300">
+        {posterUrl ? (
+          <Image
+            src={posterUrl}
+            alt={resolvedTitle}
+            fill
+            sizes="(max-width: 640px) 100px, 150px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 flex flex-col items-center justify-center p-2 text-center">
+            <Film className="w-7 h-7 text-zinc-600 mb-1" />
+            <span className="text-[9px] text-zinc-500 font-semibold truncate w-full">
+              {resolvedTitle}
+            </span>
+          </div>
+        )}
+
+        {/* Hover Rating Badge */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 backdrop-blur-sm text-yellow-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/10 shadow-lg z-10">
+          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+          <span>{displayRating || "N/A"}</span>
+        </div>
+
+        {/* Hover overlay detail */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
+          {movie.character ? (
+            <p className="text-[10px] text-purple-300 font-semibold truncate leading-tight">
+              {movie.character}
+            </p>
+          ) : movie.job ? (
+            <p className="text-[10px] text-emerald-300 font-semibold truncate leading-tight">
+              {movie.job}
+            </p>
+          ) : null}
+          {year && (
+            <span className="text-[9px] text-zinc-400 font-medium mt-0.5 flex items-center gap-0.5">
+              <Calendar className="w-2.5 h-2.5" />
+              {year}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Movie title and role info below poster */}
+      <h4 className="text-xs font-semibold text-zinc-300 mt-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
+        {resolvedTitle}
+      </h4>
+      {movie.character && (
+        <p className="text-[10px] text-purple-400/80 truncate mt-0.5 font-medium">
+          {language === "tr" ? "Rol: " : "Role: "}{movie.character}
+        </p>
+      )}
+      {year && (
+        <span className="text-[10px] text-zinc-500 font-medium font-mono">
+          {year}
+        </span>
+      )}
+    </div>
+  );
+}
+
 interface PersonModalProps {
   personId: number | null;
   onClose: () => void;
@@ -36,12 +169,14 @@ interface PersonModalProps {
     posterPath: string | null,
     backdropPath: string | null
   ) => void;
+  databaseMovies?: any[];
 }
 
 export default function PersonModal({
   personId,
   onClose,
   onSelectMovie,
+  databaseMovies,
 }: PersonModalProps) {
   const { language } = useLanguage();
   const [details, setDetails] = useState<PersonDetails | null>(null);
@@ -82,10 +217,24 @@ export default function PersonModal({
   }, []);
 
   const getResolvedRating = (movie: PersonMovieCredit) => {
+    // 1. Check local storage / ratingCache state first
     const cached = ratingCache[movie.id];
     if (cached !== undefined) {
       return cached === "N/A" ? 0 : Number(cached);
     }
+    
+    // 2. Check databaseMovies prop if provided
+    if (databaseMovies) {
+      const dbMovie = databaseMovies.find((m) => m.tmdbId === movie.id);
+      if (dbMovie) {
+        const dbRating = dbMovie.imdbRating || (dbMovie.rating ? dbMovie.rating.toFixed(1) : null);
+        if (dbRating && dbRating !== "...") {
+          return dbRating === "N/A" ? 0 : Number(dbRating);
+        }
+      }
+    }
+    
+    // 3. Fallback to credit's stale voteAverage
     return movie.voteAverage;
   };
 
@@ -282,88 +431,31 @@ export default function PersonModal({
                               }
                               return (b.popularity || 0) - (a.popularity || 0);
                             })
-                            .map((movie) => {
-                              const resolvedTitle = movie.title || (movie as any).original_title || (movie as any).name || (movie as any).original_name || "İsimsiz Film";
-                              const posterUrl = movie.posterPath
-                                ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
-                                : null;
-                              const year = movie.releaseDate
-                                ? movie.releaseDate.split("-")[0]
-                                : null;
-
-                              return (
-                                <div
-                                  key={movie.id}
-                                  onClick={() => {
-                                    onSelectMovie(
-                                      movie.id,
-                                      resolvedTitle,
-                                      movie.posterPath,
-                                      movie.backdropPath
-                                    );
-                                    onClose();
-                                  }}
-                                  className="group cursor-pointer text-left snap-start"
-                                >
-                                  {/* Poster Image container */}
-                                  <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-900/60 border border-zinc-800/60 shadow-md group-hover:scale-105 group-hover:border-purple-500/40 transition-all duration-300">
-                                    {posterUrl ? (
-                                      <Image
-                                        src={posterUrl}
-                                        alt={resolvedTitle}
-                                        fill
-                                        sizes="(max-width: 640px) 100px, 150px"
-                                        className="object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 flex flex-col items-center justify-center p-2 text-center">
-                                        <Film className="w-7 h-7 text-zinc-600 mb-1" />
-                                        <span className="text-[9px] text-zinc-500 font-semibold truncate w-full">
-                                          {resolvedTitle}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {/* NEW: Hover Rating Badge */}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 backdrop-blur-sm text-yellow-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/10 shadow-lg z-10">
-                                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                                      {ratingCache[movie.id] !== undefined
-                                        ? ratingCache[movie.id]
-                                        : (movie.voteAverage ? movie.voteAverage.toFixed(1) : "N/A")}
-                                    </div>
-
-                                    {/* Hover overlay detail */}
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2">
-                                      {movie.character ? (
-                                        <p className="text-[10px] text-purple-300 font-semibold truncate leading-tight">
-                                          {movie.character}
-                                        </p>
-                                      ) : movie.job ? (
-                                        <p className="text-[10px] text-emerald-300 font-semibold truncate leading-tight">
-                                          {movie.job}
-                                        </p>
-                                      ) : null}
-                                      {year && (
-                                        <span className="text-[9px] text-zinc-400 font-medium mt-0.5 flex items-center gap-0.5">
-                                          <Calendar className="w-2.5 h-2.5" />
-                                          {year}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Movie title and info below poster */}
-                                  <h4 className="text-xs font-semibold text-zinc-300 mt-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
-                                    {resolvedTitle}
-                                  </h4>
-                                  {year && (
-                                    <span className="text-[10px] text-zinc-500 font-medium font-mono">
-                                      {year}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
+                            .map((movie) => (
+                              <MovieCreditCard
+                                key={movie.id}
+                                movie={movie}
+                                ratingCache={ratingCache}
+                                databaseMovies={databaseMovies}
+                                onSelectMovie={onSelectMovie}
+                                onClose={onClose}
+                                updateRatingCache={(id, rating) => {
+                                  setRatingCache((prev) => ({
+                                    ...prev,
+                                    [id]: rating,
+                                  }));
+                                  try {
+                                    const cachedRatingsStr = localStorage.getItem("oxynema_rating_cache") || "{}";
+                                    const cachedRatings = JSON.parse(cachedRatingsStr);
+                                    cachedRatings[id] = rating;
+                                    localStorage.setItem("oxynema_rating_cache", JSON.stringify(cachedRatings));
+                                  } catch (e) {
+                                    console.error("Failed to update rating cache in storage", e);
+                                  }
+                                }}
+                              />
+                            ))
+                          }
                         </div>
                       )}
                     </div>

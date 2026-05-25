@@ -935,6 +935,7 @@ export default function Home() {
       <PersonModal
         personId={selectedPersonId}
         onClose={() => setSelectedPersonId(null)}
+        databaseMovies={movies}
         onSelectMovie={(tmdbId, title, posterPath, backdropPath) => {
           setSelectedPersonId(null);
           

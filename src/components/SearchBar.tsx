@@ -46,9 +46,15 @@ export default function SearchBar({ onMovieAdded, onSelectPerson, onSelectMovie,
     }
   };
 
+  // Force reset search UI anytime the application changes active context
   useEffect(() => {
-    resetSearch();
-  }, [activeMovieId, activePersonId, pathname]);
+    setSearchTerm('');
+    setIsOpen(false);
+    setResults([]);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [activeMovieId, activePersonId]);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
