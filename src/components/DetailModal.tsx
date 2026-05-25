@@ -252,6 +252,13 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
               const cachedRatings = JSON.parse(cachedRatingsStr);
               cachedRatings[activeTmdbId] = resolvedRating;
               localStorage.setItem("oxynema_rating_cache", JSON.stringify(cachedRatings));
+
+              // Broadcast custom event so that active PersonModal can sync in real-time
+              window.dispatchEvent(
+                new CustomEvent("oxynema_rating_cache_update", {
+                  detail: { id: activeTmdbId, rating: resolvedRating },
+                })
+              );
             } catch (e) {
               console.error("Failed to update rating cache", e);
             }

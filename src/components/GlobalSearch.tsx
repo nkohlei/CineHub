@@ -22,21 +22,14 @@ interface GlobalSearchProps {
   onMovieAdded?: () => void;
   onSelectPerson?: (id: number) => void;
   onSelectMovie?: (id: number, title: string, posterPath: string | null, backdropPath: string | null) => void;
+  activeMovieId?: string | number | null;
+  activePersonId?: number | null;
 }
 
-export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMovie }: GlobalSearchProps) {
+export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMovie, activeMovieId, activePersonId }: GlobalSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { t, language } = useLanguage();
-
-  useEffect(() => {
-    // Force collapse search results whenever the active view changes/routes update
-    setQuery("");
-    setIsOpen(false);
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, [pathname]);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TMDBMovie[]>([]);
@@ -45,6 +38,19 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<TMDBMovie[]>([]);
+
+  const resetSearch = () => {
+    setQuery("");
+    setIsOpen(false);
+    setResults([]);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  useEffect(() => {
+    resetSearch();
+  }, [activeMovieId, activePersonId, pathname]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -61,11 +67,12 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
   }, []);
 
   const addToHistory = (item: TMDBMovie) => {
+    const resolvedTitle = item.title || item.original_title || item.name || item.original_name || "İsimsiz Film";
     const historyItem = {
       id: item.id,
-      title: item.title || undefined,
+      title: resolvedTitle,
       name: item.name || undefined,
-      media_type: item.media_type || (item.title ? "movie" : "person"),
+      media_type: item.media_type || (item.title || item.name ? "movie" : "person"),
       release_date: item.release_date || undefined,
       poster_path: item.poster_path || null,
       profile_path: item.profile_path || null,
@@ -152,19 +159,14 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
 
   const handleMovieClick = (movie: TMDBMovie) => {
     addToHistory(movie);
-    // Forcefully wipe the search state to close the dropdown and blur active element
-    setQuery("");
-    setResults([]);
-    setIsOpen(false);
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    resetSearch();
     
     // Trigger the clean detail view instead of forced adding
     if (onSelectMovie) {
+      const resolvedTitle = movie.title || movie.original_title || movie.name || movie.original_name || "İsimsiz Film";
       onSelectMovie(
         movie.id,
-        movie.title || movie.name || "",
+        resolvedTitle,
         movie.poster_path || null,
         movie.backdrop_path || null
       );
@@ -173,21 +175,16 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
 
   const handleAddMovie = async (movie: TMDBMovie) => {
     addToHistory(movie);
-    // Forcefully wipe the search state to close the dropdown and blur active element
-    setQuery("");
-    setResults([]);
-    setIsOpen(false);
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    resetSearch();
 
     try {
+      const resolvedTitle = movie.title || movie.original_title || movie.name || movie.original_name || "İsimsiz Film";
       const res = await fetch("/api/movies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tmdbId: movie.id,
-          title: movie.title,
+          title: resolvedTitle,
           posterPath: movie.poster_path || null,
           isWatched: false, // Force isWatched false
           language: language,
@@ -195,7 +192,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
       });
 
       if (res.ok) {
-        setSuccessMsg(`Added "${movie.title}" successfully!`);
+        setSuccessMsg(`Added "${resolvedTitle}" successfully!`);
         setErrorMsg(null);
 
         // Refresh dynamic server states
@@ -347,7 +344,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
                   {posterUrl ? (
                     <Image
                       src={posterUrl}
-                      alt={item.title || "Movie"}
+                      alt={item.title || item.name || "Movie"}
                       fill
                       sizes="36px"
                       className="object-cover"
@@ -360,7 +357,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-zinc-100 truncate">
-                    {item.title}
+                    {item.title || item.original_title || item.name || item.original_name || "İsimsiz Film"}
                   </p>
                   {year && (
                     <p className="text-xs text-zinc-500 mt-0.5">{year}</p>
@@ -400,11 +397,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
                       if (onSelectPerson) {
                         onSelectPerson(movie.id);
                       }
-                      setQuery("");
-                      setIsOpen(false);
-                      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-                        document.activeElement.blur();
-                      }
+                      resetSearch();
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left cursor-pointer border-b border-zinc-800/30 last:border-0"
                   >
@@ -454,7 +447,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
                     {posterUrl ? (
                       <Image
                         src={posterUrl}
-                        alt={movie.title || "Movie"}
+                        alt={movie.title || movie.name || "Movie"}
                         fill
                         sizes="36px"
                         className="object-cover"
@@ -467,7 +460,7 @@ export default function GlobalSearch({ onMovieAdded, onSelectPerson, onSelectMov
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-zinc-100 truncate">
-                      {movie.title}
+                      {movie.title || movie.original_title || movie.name || movie.original_name || "İsimsiz Film"}
                     </p>
                     {year && (
                       <p className="text-xs text-zinc-500 mt-0.5">{year}</p>

@@ -621,6 +621,8 @@ export default function Home() {
                     });
                   }
                 }}
+                activeMovieId={selectedMovie ? (selectedMovie.tmdbId || selectedMovie.id) : null}
+                activePersonId={selectedPersonId}
               />
             </div>
             <button

@@ -67,7 +67,7 @@ export async function GET(
         if (!uniqueMovies.has(m.id)) {
           uniqueMovies.set(m.id, {
             id: m.id,
-            title: m.title || m.original_title || "",
+            title: m.title || m.original_title || m.name || m.original_name || "İsimsiz Film",
             posterPath: m.poster_path || null,
             backdropPath: m.backdrop_path || null,
             releaseDate: m.release_date || null,

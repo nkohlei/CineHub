@@ -64,6 +64,23 @@ export default function PersonModal({
     }
   }, [personId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleCacheUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.id) {
+        setRatingCache((prev) => ({
+          ...prev,
+          [customEvent.detail.id]: customEvent.detail.rating,
+        }));
+      }
+    };
+    window.addEventListener("oxynema_rating_cache_update", handleCacheUpdate);
+    return () => {
+      window.removeEventListener("oxynema_rating_cache_update", handleCacheUpdate);
+    };
+  }, []);
+
   const getResolvedRating = (movie: PersonMovieCredit) => {
     const cached = ratingCache[movie.id];
     if (cached !== undefined) {
@@ -250,18 +267,23 @@ export default function PersonModal({
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
                           {[...(details.movies || [])]
+                            .filter((movie) => movie && movie.id && movie.popularity !== undefined && movie.popularity > 0)
                             .sort((a, b) => {
                               if (sortBy === "rating") {
-                                return getResolvedRating(b) - getResolvedRating(a);
+                                const diff = getResolvedRating(b) - getResolvedRating(a);
+                                if (Math.abs(diff) > 0.01) return diff;
+                                return (b.popularity || 0) - (a.popularity || 0);
                               }
                               if (sortBy === "date") {
                                 const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
                                 const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-                                return dateB - dateA;
+                                if (dateA !== dateB) return dateB - dateA;
+                                return (b.popularity || 0) - (a.popularity || 0);
                               }
-                              return b.popularity - a.popularity;
+                              return (b.popularity || 0) - (a.popularity || 0);
                             })
                             .map((movie) => {
+                              const resolvedTitle = movie.title || (movie as any).original_title || (movie as any).name || (movie as any).original_name || "İsimsiz Film";
                               const posterUrl = movie.posterPath
                                 ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
                                 : null;
@@ -275,7 +297,7 @@ export default function PersonModal({
                                   onClick={() => {
                                     onSelectMovie(
                                       movie.id,
-                                      movie.title,
+                                      resolvedTitle,
                                       movie.posterPath,
                                       movie.backdropPath
                                     );
@@ -288,7 +310,7 @@ export default function PersonModal({
                                     {posterUrl ? (
                                       <Image
                                         src={posterUrl}
-                                        alt={movie.title}
+                                        alt={resolvedTitle}
                                         fill
                                         sizes="(max-width: 640px) 100px, 150px"
                                         className="object-cover"
@@ -297,14 +319,14 @@ export default function PersonModal({
                                       <div className="w-full h-full bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 flex flex-col items-center justify-center p-2 text-center">
                                         <Film className="w-7 h-7 text-zinc-600 mb-1" />
                                         <span className="text-[9px] text-zinc-500 font-semibold truncate w-full">
-                                          {movie.title}
+                                          {resolvedTitle}
                                         </span>
                                       </div>
                                     )}
 
                                     {/* NEW: Hover Rating Badge */}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 backdrop-blur-sm text-yellow-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/10 shadow-lg z-10">
-                                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
                                       {ratingCache[movie.id] !== undefined
                                         ? ratingCache[movie.id]
                                         : (movie.voteAverage ? movie.voteAverage.toFixed(1) : "N/A")}
@@ -332,7 +354,7 @@ export default function PersonModal({
 
                                   {/* Movie title and info below poster */}
                                   <h4 className="text-xs font-semibold text-zinc-300 mt-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
-                                    {movie.title}
+                                    {resolvedTitle}
                                   </h4>
                                   {year && (
                                     <span className="text-[10px] text-zinc-500 font-medium font-mono">
