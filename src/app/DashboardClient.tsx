@@ -74,6 +74,41 @@ export default function Home() {
   }, []);
 
   const [movies, setMovies] = useState<MovieRecord[]>([]);
+
+  // Dynamic client-side routing fallback for shared movie links
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined" || movies.length === 0) return;
+    const path = window.location.pathname;
+    const match = path.match(/\/movie\/(\d+)/);
+    if (match) {
+      const tmdbId = parseInt(match[1], 10);
+      const existing = movies.find((m) => Number(m.tmdbId) === tmdbId);
+      if (existing) {
+        setSelectedMovie(existing);
+      } else {
+        fetch(`/api/tmdb/${tmdbId}?language=${language}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setSelectedMovie({
+              id: `temp-${tmdbId}`,
+              title: data.title || "İsimsiz Film",
+              isWatched: false,
+              watchedAt: null,
+              tagColor: null,
+              tmdbId,
+              posterPath: data.posterUrl ? data.posterUrl.substring(data.posterUrl.lastIndexOf("/")) : null,
+              backdropPath: data.backdropUrl ? data.backdropUrl.substring(data.backdropUrl.lastIndexOf("/")) : null,
+              trailerKey: data.trailerKey || null,
+              rating: data.rating || null,
+              createdAt: new Date().toISOString(),
+            });
+          })
+          .catch((err) => {
+            console.error("Failed to parse movie from URL path:", err);
+          });
+      }
+    }
+  }, [mounted, movies, language]);
   const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
   const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
