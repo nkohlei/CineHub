@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/movie/:id',
+        has: [
+          {
+            type: 'header',
+            key: 'user-agent',
+            value: '.*(WhatsApp|WhatsApp\\/.*|TelegramBot|Twitterbot|facebookexternalhit).*',
+          },
+        ],
+        destination: '/api/share-metadata?id=:id',
+      },
+      {
+        source: '/movie/:id',
         destination: '/',
       },
     ];
