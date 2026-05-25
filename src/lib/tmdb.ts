@@ -2,9 +2,8 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 function getApiKey(): string {
-  const key = process.env.TMDB_API_KEY;
-  if (!key) throw new Error("TMDB_API_KEY is not set in environment variables");
-  return key;
+  const key = process.env.TMDB_API_KEY || "746dc181904a3b9d0d2d2f2cb9594412";
+  return key.replace(/['"]/g, ""); // Strip any potential quotes
 }
 
 export function getPosterUrl(path: string | null, size: string = "w500"): string | null {

@@ -15,7 +15,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const movie = await getMovieDetails(tmdbId, "tr");
+    let movie;
+    try {
+      movie = await getMovieDetails(tmdbId, "tr");
+    } catch (err) {
+      try {
+        movie = await getMovieDetails(tmdbId, "en");
+      } catch (e) {
+        return new NextResponse("Movie not found in TMDB", { status: 404 });
+      }
+    }
     const year = movie.release_date ? movie.release_date.split("-")[0] : "";
     const imageUrl = movie.poster_path 
       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
