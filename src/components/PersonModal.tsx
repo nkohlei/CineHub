@@ -55,7 +55,7 @@ function MovieCreditCard({
   const cachedRating = ratingCache[movie.id];
   let dbRating: string | null = null;
   if (databaseMovies) {
-    const dbMovie = databaseMovies.find((m) => m.tmdbId === movie.id);
+    const dbMovie = databaseMovies.find((m) => Number(m.tmdbId) === Number(movie.id));
     if (dbMovie) {
       dbRating = dbMovie.imdbRating || (dbMovie.rating ? dbMovie.rating.toFixed(1) : null);
     }
@@ -205,7 +205,7 @@ export default function PersonModal({
     
     // 2. Check databaseMovies prop if provided
     if (databaseMovies) {
-      const dbMovie = databaseMovies.find((m) => m.tmdbId === movie.id);
+      const dbMovie = databaseMovies.find((m) => Number(m.tmdbId) === Number(movie.id));
       if (dbMovie) {
         const dbRating = dbMovie.imdbRating || (dbMovie.rating ? dbMovie.rating.toFixed(1) : null);
         if (dbRating && dbRating !== "...") {
@@ -253,14 +253,21 @@ export default function PersonModal({
               if (!detailRes.ok) throw new Error("Failed to fetch movie detail");
               const freshDetails = await detailRes.json();
               
+              const posterPath = freshDetails.posterUrl
+                ? freshDetails.posterUrl.substring(freshDetails.posterUrl.lastIndexOf("/"))
+                : (m.posterPath || m.poster_path || null);
+              const backdropPath = freshDetails.backdropUrl
+                ? freshDetails.backdropUrl.substring(freshDetails.backdropUrl.lastIndexOf("/"))
+                : (m.backdropPath || m.backdrop_path || null);
+
               return {
                 id: m.id,
-                title: freshDetails.title || freshDetails.original_title || "İsimsiz Film",
-                voteAverage: freshDetails.vote_average || freshDetails.voteAverage || freshDetails.rating || 0,
-                posterPath: freshDetails.poster_path || freshDetails.posterPath || null,
-                backdropPath: freshDetails.backdrop_path || freshDetails.backdropPath || null,
-                releaseDate: freshDetails.release_date || freshDetails.releaseDate || null,
-                popularity: freshDetails.popularity || 0,
+                title: freshDetails.title || m.title || "İsimsiz Film",
+                voteAverage: freshDetails.rating || freshDetails.vote_average || freshDetails.voteAverage || m.voteAverage || m.vote_average || 0,
+                posterPath,
+                backdropPath,
+                releaseDate: freshDetails.releaseDate || m.releaseDate || m.release_date || null,
+                popularity: freshDetails.popularity || m.popularity || 0,
                 character: m.character || null,
                 job: m.job || null,
               };
