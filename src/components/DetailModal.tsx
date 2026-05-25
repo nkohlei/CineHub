@@ -121,7 +121,8 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
 
     // Dynamically extract the active origin or guarantee it points to the correct serving base
     const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://oxynema.netlify.app';
-    const shareLink = `${originUrl}?movie=${movieId}`;
+    // Ensure the forward slash is explicitly forced before the question mark
+    const shareLink = `${originUrl.replace(/\/$/, '')}/?movie=${movieId}`;
 
     return `🍿 Oxynema'da Harika Bir Film Keşfettim: *${activeTitle}* ${movieYear ? `(${movieYear})` : ""}\n\n⭐ IMDb: ${movieRating}/10\n📝 ${shortOverview}\n\n👉 Filmin detaylarını incelemek, fragmanını izlemek ve bana katılmak için tıkla:\n${shareLink}\n\n🎬 Sen de Oxynema'ya gel, kendi sinema listeni oluştur ve sinema dünyasını bizimle keşfet!`;
   };
