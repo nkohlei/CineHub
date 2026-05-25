@@ -61,7 +61,8 @@ function MovieCreditCard({
     }
   }
 
-  const displayRating = cachedRating || (dbRating && dbRating !== "..." ? dbRating : null) || (movie.voteAverage ? Number(movie.voteAverage).toFixed(1) : null);
+  // Prioritize DB rating and live hydrated rating over potentially stale ratingCache value
+  const displayRating = (dbRating && dbRating !== "..." ? dbRating : null) || (movie.voteAverage ? Number(movie.voteAverage).toFixed(1) : null) || cachedRating || "N/A";
 
   const posterUrl = movie.posterPath
     ? `https://image.tmdb.org/t/p/w342${movie.posterPath}`
@@ -197,13 +198,7 @@ export default function PersonModal({
   }, []);
 
   const getResolvedRating = (movie: PersonMovieCredit) => {
-    // 1. Check local storage / ratingCache state first
-    const cached = ratingCache[movie.id];
-    if (cached !== undefined) {
-      return cached === "N/A" ? 0 : Number(cached);
-    }
-    
-    // 2. Check databaseMovies prop if provided
+    // 1. Check databaseMovies prop first
     if (databaseMovies) {
       const dbMovie = databaseMovies.find((m) => Number(m.tmdbId) === Number(movie.id));
       if (dbMovie) {
@@ -213,9 +208,19 @@ export default function PersonModal({
         }
       }
     }
+
+    // 2. Check the movie's voteAverage (which is the live hydrated rating)
+    if (movie.voteAverage) {
+      return movie.voteAverage;
+    }
     
-    // 3. Fallback to credit's stale voteAverage
-    return movie.voteAverage;
+    // 3. Check local storage / ratingCache state next
+    const cached = ratingCache[movie.id];
+    if (cached !== undefined) {
+      return cached === "N/A" ? 0 : Number(cached);
+    }
+    
+    return 0;
   };
 
   useEffect(() => {
