@@ -107,6 +107,8 @@ export default function Home() {
     }
   }, []);
 
+  const [hydrationCompleted, setHydrationCompleted] = useState(false);
+
   // Deep-Linking Path State Hydration on Mount
   useEffect(() => {
     if (!mounted || status === "loading") return;
@@ -122,11 +124,12 @@ export default function Home() {
           return;
         }
         
-        if (status === "authenticated" && movies.length > 0) {
+        if (status === "authenticated") {
           const timer = setTimeout(() => {
             const existing = movies.find((m) => Number(m.tmdbId) === targetMovieId);
             if (existing) {
               setSelectedMovie(existing);
+              setHydrationCompleted(true);
             } else {
               fetch(`/api/tmdb/${targetMovieId}?language=${language}`)
                 .then((res) => res.json())
@@ -144,22 +147,28 @@ export default function Home() {
                     rating: data.rating || null,
                     createdAt: new Date().toISOString(),
                   });
+                  setHydrationCompleted(true);
                 })
                 .catch((err) => {
                   console.error("Failed to parse movie from URL path parameter:", err);
+                  setHydrationCompleted(true);
                 });
             }
           }, 150);
 
           return () => clearTimeout(timer);
         }
+      } else {
+        setHydrationCompleted(true);
       }
+    } else {
+      setHydrationCompleted(true);
     }
   }, [status, movies, language, router, mounted]);
 
   // Synchronize Modal State with URL Paths using shallow pushes
   useEffect(() => {
-    if (!mounted || typeof window === "undefined") return;
+    if (!mounted || !hydrationCompleted || typeof window === "undefined") return;
     const currentPath = window.location.pathname;
 
     if (selectedMovie) {
@@ -173,7 +182,7 @@ export default function Home() {
         window.history.pushState({ path: '/' }, '', '/');
       }
     }
-  }, [selectedMovie, mounted]);
+  }, [selectedMovie, mounted, hydrationCompleted]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
