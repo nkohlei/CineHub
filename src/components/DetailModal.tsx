@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { MovieRecord, CastMember } from "@/lib/types";
-import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2, ExternalLink, Plus } from "lucide-react";
+import { X, Star, Play, Clock, Heart, ThumbsUp, Award, User, Trash, Eye, Film, ChevronLeft, ChevronRight, Send, Loader2, ExternalLink, Plus, Link, Share2 } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -109,6 +109,39 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
     } finally {
       setSharingUserId(null);
     }
+  };
+
+  const getShareText = () => {
+    if (!movie) return "";
+    const movieYear = details?.year || movie.releaseDate?.split("-")[0] || "";
+    const movieRating = rating !== "..." ? rating : (details?.rating || movie.rating || "N/A");
+    const movieOverview = details?.overview || "";
+    const shortOverview = movieOverview.length > 100 ? `${movieOverview.substring(0, 100)}...` : movieOverview;
+    const movieId = activeTmdbId || movie.tmdbId;
+
+    return `🍿 Oxynema'da Harika Bir Film Keşfettim: *${activeTitle}* ${movieYear ? `(${movieYear})` : ""}\n\n⭐ IMDb: ${movieRating}/10\n📝 ${shortOverview}\n\n👉 Filmin detaylarını incelemek, fragmanını izlemek ve bana katılmak için tıkla:\nhttps://oxynema.netlify.app/movie/${movieId}\n\n🎬 Sen de Oxynema'ya gel, kendi sinema listeni oluştur ve sinema dünyasını bizimle keşfet!`;
+  };
+
+  const handleCopyExternalLink = async () => {
+    const text = getShareText();
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        if (showToast) {
+          showToast(language === "tr" ? "Bağlantı panoya kopyalandı!" : "Link copied to clipboard!", "success");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+    setSharePopoverOpen(false);
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = getShareText();
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setSharePopoverOpen(false);
   };
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -607,36 +640,61 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             className="absolute right-0 mt-2 w-56 z-[100] origin-top-right bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 p-2 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.7)]"
                           >
-                            <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider px-2.5 py-1.5 border-b border-zinc-800/80 mb-1">{t.friendsTitle}</p>
-                            {friends.length === 0 ? (
-                              <p className="text-xs text-zinc-500 px-2.5 py-3 text-center">{t.noFriends}</p>
-                            ) : (
-                              <div className="max-h-40 overflow-y-auto scrollbar-none space-y-0.5">
-                                {friends.map((friend) => (
-                                  <button
-                                    key={friend.id}
-                                    disabled={sharingUserId !== null}
-                                    onClick={() => handleShareMovie(friend)}
-                                    className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center justify-between hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer disabled:opacity-50"
-                                  >
-                                    <div className="flex items-center gap-2 truncate">
-                                      {friend.image ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={friend.image} alt={friend.name} className="w-4 h-4 rounded-full border border-purple-500/20" />
+                            <div className="flex flex-col gap-0.5">
+                              {/* External Sharing */}
+                              <button
+                                onClick={handleCopyExternalLink}
+                                className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center gap-2 hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer"
+                              >
+                                <Link className="w-3.5 h-3.5 text-blue-400" />
+                                <span>{language === "tr" ? "Bağlantıyı Kopyala" : "Copy Share Link"}</span>
+                              </button>
+
+                              <button
+                                onClick={handleShareWhatsApp}
+                                className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center gap-2 hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer"
+                              >
+                                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>{language === "tr" ? "WhatsApp'ta Paylaş" : "Share on WhatsApp"}</span>
+                              </button>
+
+                              <div className="h-px bg-zinc-800/80 my-1" />
+
+                              {/* Internal Friends Sharing */}
+                              <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider px-2.5 py-1 mb-1">
+                                {language === "tr" ? "Oxynema Arkadaşına Gönder" : "Send to Friend"}
+                              </p>
+                              
+                              {friends.length === 0 ? (
+                                <p className="text-xs text-zinc-500 px-2.5 py-2 text-center">{t.noFriends}</p>
+                              ) : (
+                                <div className="max-h-36 overflow-y-auto scrollbar-none space-y-0.5">
+                                  {friends.map((friend) => (
+                                    <button
+                                      key={friend.id}
+                                      disabled={sharingUserId !== null}
+                                      onClick={() => handleShareMovie(friend)}
+                                      className="w-full text-left px-2.5 py-2 text-xs rounded-lg transition-all flex items-center justify-between hover:bg-white/5 text-zinc-300 hover:text-white cursor-pointer disabled:opacity-50"
+                                    >
+                                      <div className="flex items-center gap-2 truncate">
+                                        {friend.image ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={friend.image} alt={friend.name} className="w-4 h-4 rounded-full border border-purple-500/20" />
+                                        ) : (
+                                          <div className="w-4 h-4 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[8px]">{friend.name?.[0] || "U"}</div>
+                                        )}
+                                        <span className="truncate">{friend.name}</span>
+                                      </div>
+                                      {sharingUserId === friend.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
                                       ) : (
-                                        <div className="w-4 h-4 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[8px]">{friend.name?.[0] || "U"}</div>
+                                        <span className="text-[9px] text-zinc-600 font-mono">{friend.shareId}</span>
                                       )}
-                                      <span className="truncate">{friend.name}</span>
-                                    </div>
-                                    {sharingUserId === friend.id ? (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                                    ) : (
-                                      <span className="text-[9px] text-zinc-600 font-mono">{friend.shareId}</span>
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
