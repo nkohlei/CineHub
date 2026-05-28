@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { getMovieDetails } from "@/lib/tmdb";
+import { Providers } from "@/components/Providers";
+import DashboardClient from "@/app/DashboardClient";
+import { MovieRecord } from "@/lib/types";
 
 type MovieDetailsProps = {
   movie: {
@@ -11,6 +12,8 @@ type MovieDetailsProps = {
     year: string;
     ratingStr: string;
     posterUrl: string;
+    backdropPath: string | null;
+    trailerKey: string | null;
     tmdbId: number;
   } | null;
 };
@@ -39,6 +42,8 @@ export const getServerSideProps: GetServerSideProps<MovieDetailsProps> = async (
           year,
           ratingStr,
           posterUrl,
+          backdropPath: movie.backdrop_path ? `/t/p/original${movie.backdrop_path}` : null,
+          trailerKey: movie.trailerKey || null,
           tmdbId,
         },
       },
@@ -53,35 +58,35 @@ export const getServerSideProps: GetServerSideProps<MovieDetailsProps> = async (
   }
 };
 
-export default function MovieMetaDataPage({ movie }: MovieDetailsProps) {
-  const router = useRouter();
-
-  // Perform client-side redirect for real users
-  useEffect(() => {
-    if (movie?.tmdbId) {
-      router.replace(`/?movie=${movie.tmdbId}`);
-    } else {
-      router.replace("/");
-    }
-  }, [movie, router]);
-
+export default function MoviePage({ movie }: MovieDetailsProps) {
   if (!movie) {
     return (
-      <>
+      <Providers>
         <Head>
           <title>Oxynema - Sinema Keşif Platformu</title>
           <meta name="description" content="Oxynema ile film keşfedin, listenizi oluşturun ve arkadaşlarınızla paylaşın." />
         </Head>
-        <div style={{ padding: "20px", fontFamily: "sans-serif", color: "#fff", background: "#09090b", minHeight: "100vh" }}>
-          <h1>Oxynema</h1>
-          <p>Film bulunamadı.</p>
-        </div>
-      </>
+        <DashboardClient initialMovie={null} />
+      </Providers>
     );
   }
 
+  const initialMovieRecord: MovieRecord = {
+    id: `temp-${movie.tmdbId}`,
+    title: movie.title,
+    isWatched: false,
+    watchedAt: null,
+    tagColor: null,
+    tmdbId: movie.tmdbId,
+    posterPath: movie.posterUrl ? movie.posterUrl.substring(movie.posterUrl.lastIndexOf("/t/p/")) : null,
+    backdropPath: movie.backdropPath,
+    trailerKey: movie.trailerKey,
+    rating: movie.ratingStr !== "N/A" ? parseFloat(movie.ratingStr) : null,
+    createdAt: new Date().toISOString(),
+  };
+
   return (
-    <>
+    <Providers>
       <Head>
         <title>{`${movie.title} (${movie.year}) - Oxynema`}</title>
         <meta name="description" content={`${movie.title} - IMDb: ${movie.ratingStr}. ${movie.overview.substring(0, 160)}`} />
@@ -102,27 +107,7 @@ export default function MovieMetaDataPage({ movie }: MovieDetailsProps) {
         <meta name="twitter:description" content={movie.overview.substring(0, 150)} />
         <meta name="twitter:image" content={movie.posterUrl} />
       </Head>
-      
-      {/* Fallback loader/container while redirect triggers */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 20px",
-        fontFamily: "sans-serif",
-        color: "#fff",
-        background: "#09090b",
-        minHeight: "100vh",
-        textAlign: "center"
-      }}>
-        <div style={{ maxWidth: "500px", background: "#18181b", padding: "30px", borderRadius: "12px", border: "1px solid #27272a" }}>
-          <img src={movie.posterUrl} alt={movie.title} style={{ width: "200px", borderRadius: "8px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }} />
-          <h1 style={{ marginTop: "20px", fontSize: "24px" }}>{movie.title} ({movie.year})</h1>
-          <p style={{ color: "#a1a1aa", fontSize: "16px", margin: "10px 0" }}>⭐ IMDb: {movie.ratingStr}/10</p>
-          <p style={{ color: "#d4d4d8", fontSize: "14px", lineHeight: "1.6" }}>{movie.overview}</p>
-        </div>
-      </div>
-    </>
+      <DashboardClient initialMovie={initialMovieRecord} />
+    </Providers>
   );
 }

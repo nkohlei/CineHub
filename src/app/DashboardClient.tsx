@@ -10,7 +10,6 @@ import MovieCard from "@/components/MovieCard";
 import GlobalSearch from "@/components/GlobalSearch";
 import Footer from "@/components/Footer";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Image from "next/image";
@@ -34,7 +33,6 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
   const userShareId = (session?.user as any)?.shareId || "------";
 
   const { t, language } = useLanguage();
-  const router = useRouter();
 
   const [isBot, setIsBot] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -71,15 +69,15 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
         const queryMovieId = searchParams.get("movie");
 
         if (currentPath.startsWith('/movie/')) {
-          router.push(`/login?redirect=${currentPath}`);
+          window.location.href = `/login?redirect=${currentPath}`;
         } else if (queryMovieId) {
-          router.push(`/login?redirect=/movie/${queryMovieId}`);
+          window.location.href = `/login?redirect=/movie/${queryMovieId}`;
         } else {
-          router.push("/login");
+          window.location.href = "/login";
         }
       }
     }
-  }, [status, router]);
+  }, [status]);
 
   // Global Unauthenticated Interaction Interceptor (Auth Guard)
   useEffect(() => {
@@ -95,18 +93,18 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
           const queryMovieId = searchParams.get("movie");
 
           if (currentPath.startsWith('/movie/')) {
-            router.push(`/login?redirect=${currentPath}`);
+            window.location.href = `/login?redirect=${currentPath}`;
           } else if (queryMovieId) {
-            router.push(`/login?redirect=/movie/${queryMovieId}`);
+            window.location.href = `/login?redirect=/movie/${queryMovieId}`;
           } else {
-            router.push("/login");
+            window.location.href = "/login";
           }
         };
         window.addEventListener("click", handleGlobalClick, true);
         return () => window.removeEventListener("click", handleGlobalClick, true);
       }
     }
-  }, [status, router]);
+  }, [status]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -132,7 +130,7 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
         const targetMovieId = Number(extractedId);
         
         if (status === "unauthenticated") {
-          router.push(`/login?redirect=/movie/${targetMovieId}`);
+          window.location.href = `/login?redirect=/movie/${targetMovieId}`;
           return;
         }
         
@@ -176,7 +174,7 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
     } else {
       setHydrationCompleted(true);
     }
-  }, [status, movies, language, router, mounted]);
+  }, [status, movies, language, mounted]);
 
   // Synchronize Modal State with URL Paths using shallow pushes
   useEffect(() => {
