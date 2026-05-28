@@ -67,8 +67,13 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
       // ONLY kick real humans to the login page. Bots stay on the dashboard!
       if (!isPageSpeedBot) {
         const currentPath = window.location.pathname;
+        const searchParams = new URLSearchParams(window.location.search);
+        const queryMovieId = searchParams.get("movie");
+
         if (currentPath.startsWith('/movie/')) {
           router.push(`/login?redirect=${currentPath}`);
+        } else if (queryMovieId) {
+          router.push(`/login?redirect=/movie/${queryMovieId}`);
         } else {
           router.push("/login");
         }
@@ -86,8 +91,13 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
           e.preventDefault();
           e.stopPropagation();
           const currentPath = window.location.pathname;
+          const searchParams = new URLSearchParams(window.location.search);
+          const queryMovieId = searchParams.get("movie");
+
           if (currentPath.startsWith('/movie/')) {
             router.push(`/login?redirect=${currentPath}`);
+          } else if (queryMovieId) {
+            router.push(`/login?redirect=/movie/${queryMovieId}`);
           } else {
             router.push("/login");
           }
@@ -113,9 +123,11 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
   useEffect(() => {
     if (!mounted || status === "loading") return;
     const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryMovieId = searchParams.get("movie");
     
-    if (currentPath.startsWith('/movie/')) {
-      const extractedId = currentPath.split('/movie/')[1];
+    if (currentPath.startsWith('/movie/') || queryMovieId) {
+      const extractedId = queryMovieId || currentPath.split('/movie/')[1];
       if (extractedId) {
         const targetMovieId = Number(extractedId);
         
