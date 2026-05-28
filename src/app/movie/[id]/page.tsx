@@ -1,8 +1,6 @@
 import { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getMovieDetails } from "@/lib/tmdb";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import DashboardClient from "../../DashboardClient";
 import { MovieRecord } from "@/lib/types";
 
@@ -64,12 +62,6 @@ export default async function MoviePage({ params }: Props) {
 
   if (isNaN(tmdbId)) {
     notFound();
-  }
-
-  // ABSOLUTE AUTH GUARD: If user is a guest, intercept instantly and redirect to login
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect(`/login?redirect=/movie/${id}`);
   }
 
   let movie;
