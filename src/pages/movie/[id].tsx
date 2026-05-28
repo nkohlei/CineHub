@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { getMovieDetails } from "@/lib/tmdb";
@@ -16,23 +18,9 @@ type MovieDetailsProps = {
 export const getServerSideProps: GetServerSideProps<MovieDetailsProps> = async (context) => {
   const { id } = context.params || {};
   const tmdbId = parseInt(id as string, 10);
-  const userAgent = context.req.headers["user-agent"] || "";
-  
-  // Robust bot/crawler detection to isolate social crawler requests
-  const isBot = /WhatsApp|WhatsApp\/.*|TelegramBot|Twitterbot|facebookexternalhit|Lighthouse|PageSpeed|Googlebot/i.test(userAgent);
 
   if (isNaN(tmdbId)) {
     return { notFound: true };
-  }
-
-  // Real users should be redirected immediately to the home dashboard with a query parameter
-  if (!isBot) {
-    return {
-      redirect: {
-        destination: `/?movie=${tmdbId}`,
-        permanent: false,
-      },
-    };
   }
 
   try {
@@ -66,6 +54,17 @@ export const getServerSideProps: GetServerSideProps<MovieDetailsProps> = async (
 };
 
 export default function MovieMetaDataPage({ movie }: MovieDetailsProps) {
+  const router = useRouter();
+
+  // Perform client-side redirect for real users
+  useEffect(() => {
+    if (movie?.tmdbId) {
+      router.replace(`/?movie=${movie.tmdbId}`);
+    } else {
+      router.replace("/");
+    }
+  }, [movie, router]);
+
   if (!movie) {
     return (
       <>
@@ -104,7 +103,7 @@ export default function MovieMetaDataPage({ movie }: MovieDetailsProps) {
         <meta name="twitter:image" content={movie.posterUrl} />
       </Head>
       
-      {/* Fallback minimal visual container for bots or direct preview loads */}
+      {/* Fallback loader/container while redirect triggers */}
       <div style={{
         display: "flex",
         flexDirection: "column",
