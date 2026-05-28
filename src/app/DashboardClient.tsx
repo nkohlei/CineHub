@@ -25,7 +25,7 @@ const MovieRoulette = dynamic(() => import("@/components/MovieRoulette"), { ssr:
 const FriendsModal = dynamic(() => import("@/components/FriendsModal"), { ssr: false });
 const PersonModal = dynamic(() => import("@/components/PersonModal"), { ssr: false });
 
-export default function Home() {
+export default function Home({ initialMovie }: { initialMovie?: MovieRecord | null }) {
   const { data: session, status } = useSession({
     required: false // Prevents client-side hydration freezing during account jumps
   });
@@ -53,7 +53,7 @@ export default function Home() {
   }, [mounted]);
 
   const [activeTab, setActiveTab] = useState<"watchlist" | "watched">("watchlist");
-  const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<MovieRecord | null>(initialMovie || null);
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [evaluationMovie, setEvaluationMovie] = useState<MovieRecord | null>(null);
   const [rouletteOpen, setRouletteOpen] = useState(false);
