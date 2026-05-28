@@ -114,17 +114,14 @@ export default function DetailModal({ movie, onClose, onMarkWatched, onDelete, o
   const getShareText = () => {
     if (!movie) return "";
     const movieYear = details?.year || movie.releaseDate?.split("-")[0] || "";
-    const movieRating = rating !== "..." ? rating : (details?.rating || movie.rating || "N/A");
-    const movieOverview = details?.overview || "";
-    const shortOverview = movieOverview.length > 100 ? `${movieOverview.substring(0, 100)}...` : movieOverview;
     const movieId = activeTmdbId || movie.tmdbId;
 
     // Dynamically extract the active origin or guarantee it points to the correct serving base
-    const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://oxynema.netlify.app';
+    const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://oxynema.vercel.app';
     // Beautiful, real URL pathing:
     const shareLink = `${originUrl.replace(/\/$/, '')}/movie/${movieId}`;
 
-    return `🍿 Oxynema'da Harika Bir Film Keşfettim: *${activeTitle}* ${movieYear ? `(${movieYear})` : ""}\n\n⭐ IMDb: ${movieRating}/10\n📝 ${shortOverview}\n\n👉 Filmin detaylarını incelemek, fragmanını izlemek ve bana katılmak için tıkla:\n${shareLink}\n\n🎬 Sen de Oxynema'ya gel, kendi sinema listeni oluştur ve sinema dünyasını bizimle keşfet!`;
+    return `🍿 Oxynema'da harika bir film keşfettim: *${activeTitle}* ${movieYear ? `(${movieYear})` : ""}\n\n👉 Detaylar, fragman ve daha fazlası için tıkla:\n${shareLink}`;
   };
 
   const handleCopyExternalLink = async () => {
