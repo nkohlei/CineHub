@@ -80,3 +80,14 @@ model Movie {
   userId       String?   @db.ObjectId
   user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model CinemaMovie {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  movieId        Int
+  title          String
+  poster         String
+  overview       String
+  imdbRating     Float?
+  videoStreamUrl String
+  publishedAt    DateTime @default(now())
+}

@@ -17,6 +17,8 @@ import LogoImage from "@/app/oxynema-logo.png";
 import AuthBg from "../../public/images/auth-bg.jpg";
 import LoginPage from "./login/page";
 import dynamic from 'next/dynamic';
+import Link from "next/link";
+import NotificationAlert from "@/components/NotificationAlert";
 
 const DetailModal = dynamic(() => import("@/components/DetailModal"), { ssr: false });
 const EvaluationModal = dynamic(() => import("@/components/EvaluationModal"), { ssr: false });
@@ -603,6 +605,7 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
 
   return (
     <main className="flex-1 px-3 sm:px-10 md:px-12 py-4 sm:py-6 md:py-8 max-w-7xl mx-auto w-full">
+      <NotificationAlert />
       <div className={isAnyModalOpen ? "modal-open-prevent-scroll flex-1 flex flex-col" : "flex-1 flex flex-col"}>
       {/* Header */}
       <motion.header
@@ -707,7 +710,16 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
           </div>
           
           {/* Red Zone: Friends Button & Search Bar */}
-          <div className="flex w-full sm:w-auto items-stretch gap-2 justify-end">
+          <div className="flex flex-col items-end gap-2">
+            <Link
+              href="/cinema"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/25 hover:border-purple-500/45 text-purple-300 hover:text-purple-200 transition-all text-xs font-bold shadow-md cursor-pointer select-none"
+              title={language === 'tr' ? 'Sinema Odası' : 'Cinema Room'}
+            >
+              <Film className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+              <span>{language === 'tr' ? 'Sinema Odası' : 'Cinema Room'}</span>
+            </Link>
+            <div className="flex w-full sm:w-auto items-stretch gap-2 justify-end">
             <div className="order-1 md:order-2 flex-grow sm:flex-grow-0 flex items-center">
               <GlobalSearch 
                 onMovieAdded={handleMovieAdded} 
@@ -751,6 +763,7 @@ export default function Home({ initialMovie }: { initialMovie?: MovieRecord | nu
                 </span>
               )}
             </button>
+          </div>
           </div>
         </div>
         <StatsBar total={movies.length} watched={watched.length} />
