@@ -137,7 +137,7 @@ export default function CinemaRoomPage() {
         {/* Video Player Section */}
         <div className="w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden bg-black border border-zinc-800/80 shadow-2xl relative mb-8 group">
           <video
-            src={activeMovie.videoStreamUrl}
+            src={`/api/proxy-video?url=${encodeURIComponent(activeMovie.videoStreamUrl)}`}
             className="w-full h-full object-contain"
             controls
             preload="metadata"
